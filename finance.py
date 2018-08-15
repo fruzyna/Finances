@@ -28,6 +28,11 @@ def setupLog(logFile):
 # TODO account for new unprocessed dates in date column
 # A history/search tool
 def getLast(log, count, acct='', start='', end='', title='', location='', note=''):
+    hLog = filter(log, acct=acct, start=start, end=end, title=title, location=location, note=note)
+    return hLog.tail(count).sort_values('date')
+
+# Filter the database
+def filter(log, acct='', start='', end='', title='', location='', note=''):
     hLog = log
     if acct != '':
         hLog = hLog[(hLog['from'] == acct) | (hLog['to'] == acct)]
@@ -41,7 +46,7 @@ def getLast(log, count, acct='', start='', end='', title='', location='', note='
         hLog = hLog[hLog['location'].str.contains(location)]
     if note != '':
         hLog = hLog[hLog['note'].str.contains(note)]
-    return hLog.tail(count).sort_values('date')
+    return hLog
 
 # Get a optional arguments value, provide default if not provided
 def getOpArg(args, arg, default=''):
@@ -238,12 +243,34 @@ def balance(args):
             name = '\u001b[1mTotal'
         print(name, ':', ' '*spaces, delta, sep='')
 
+# exports data to a csv file
+def export(args):
+    if len(args) > 1:
+        fileLoc = os.path.expanduser(args[1])
+        if not fileLoc.endswith('.csv'):
+            fileLoc += '.csv'
+
+        # optional arguments
+        acct = getOpArg(args, '--acct').upper()
+        end = getOpArg(args, '--end').upper()
+        start = getOpArg(args, '--start').upper()
+        title = getOpArg(args, '--title')
+        loc = getOpArg(args, '--loc')
+        note = getOpArg(args, '--note')
+        
+        items = filter(log, acct=acct, start=start, end=end, title=title, location=loc, note=note)
+        items.to_csv(fileLoc)
+        print('Exported', len(items.index), 'items to', fileLoc)
+    else:
+        print('Requires at least 1 argument, the file location')
+
 # give help output
 def helpCmd(args):
     print('Commands')
     print('--------')
     for key in cmds:
-        print(key)
+        _, msg = cmds[key]
+        print(key, '-', msg)
 
 # warn a command is unknown
 def unknown(args):
@@ -251,13 +278,14 @@ def unknown(args):
 
 # dictionary of commands  
 cmds = dict({
-    'add': add,
-    'hist': showHistory,
-    'listAccts': listAccounts,
-    'newAcct': addAccount,
-    'acctInfo': accountInfo,
-    'balance': balance,
-    'help': helpCmd
+    'add': (add, 'Add a new item to the log.'),
+    'hist': (showHistory, 'Display the last X items, default is 5.'),
+    'listAccts': (listAccounts, 'List all known accounts.'),
+    'newAcct': (addAccount, 'Add a new account.'),
+    'acctInfo': (accountInfo, 'Display a brief summary of a given account'),
+    'balance': (balance, 'Provide the balance of all accounts, as well as the total.'),
+    'help': (helpCmd, 'List and describe all command options'),
+    'export': (export, 'Export entries to a new file.')
 })
 
 #
@@ -305,6 +333,7 @@ print()
 
 # execute command
 if mode in cmds:
-    cmds[mode](args)
+    fn,_ = cmds[mode]
+    fn(args)
 else:
     unknown(args)
