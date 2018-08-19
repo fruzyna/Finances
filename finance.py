@@ -80,7 +80,7 @@ def getAccountInfo(log, account, start='', end=''):
     trans = toTrans + fromTrans
     return add, sub, delta, toTrans, fromTrans, trans
 
-# converts a doller value to a pretty string
+# converts a dollar value to a pretty string
 def valueToString(value):
     valStr = str(value)
 
@@ -91,7 +91,11 @@ def valueToString(value):
         valStr = '$' + valStr
 
     # add commas
-    digits = len(str(int(value)))
+    digits = len(str(abs(int(value))))
+    decs = len(valStr[valStr.index('.')+1:])
+    for i in range(max(2 - decs, 0)):
+        valStr += '0'
+    
     commas = int((digits-1) / 3 )
     for i in range(commas):
         pIndex = valStr.index('.')
