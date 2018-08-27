@@ -1,6 +1,7 @@
 import sys, os
 import pandas as pd
 from datetime import datetime as dt
+from decimal import *
 
 #
 # Helper Functions
@@ -154,11 +155,12 @@ def showHistory(args):
 
     # optional arguments
     acct = getOpArg(args, '--acct').upper()
-    end = getOpArg(args, '--end').upper()
-    start = getOpArg(args, '--start').upper()
+    end = getOpArg(args, '--end')
+    start = getOpArg(args, '--start')
     title = getOpArg(args, '--title')
     loc = getOpArg(args, '--loc')
     note = getOpArg(args, '--note')
+    count = int(getOpArg(args, '--count', default=count))
 
     if acct != '' and acct not in accounts:
         print('Invalid account provided')
