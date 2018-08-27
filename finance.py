@@ -83,7 +83,7 @@ def getAccountInfo(log, account, start='', end=''):
 
 # converts a dollar value to a pretty string
 def valueToString(value):
-    valStr = str(value)
+    valStr = str(round(value, 2))
 
     # add dollar sign
     if value < 0:
