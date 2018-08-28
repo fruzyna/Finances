@@ -1,4 +1,4 @@
-import sys, os
+import sys, os, shutil
 import pandas as pd
 from datetime import datetime as dt
 from decimal import *
@@ -270,6 +270,20 @@ def export(args):
     else:
         print('Requires at least 1 argument, the file location')
 
+# link the directory else where (dropbox for example)
+def link(args):
+    global confDir
+    if len(args) > 1:
+        to = os.path.expanduser(args[1])
+        shutil.move(confDir, to)
+        print('Moved data to', to)
+        if confDir.endswith('/'):
+            confDir = confDir[:-1]
+        os.symlink(to, confDir)
+        print('Linked', confDir, 'to', to)
+    else:
+        print('Requires at least 1 argument, the directory to link to')
+
 # give help output
 def helpCmd(args):
     print('Commands')
@@ -291,7 +305,8 @@ cmds = dict({
     'acctInfo': (accountInfo, 'Display a brief summary of a given account'),
     'balance': (balance, 'Provide the balance of all accounts, as well as the total.'),
     'help': (helpCmd, 'List and describe all command options'),
-    'export': (export, 'Export entries to a new file.')
+    'export': (export, 'Export entries to a new file.'),
+    'link': (link, 'Link the configuration directory to a given directory.')
 })
 
 #
