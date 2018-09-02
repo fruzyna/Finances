@@ -28,12 +28,12 @@ def setupLog(logFile):
 
 # TODO account for new unprocessed dates in date column
 # A history/search tool
-def getLast(log, count, acct='', start='', end='', title='', location='', note=''):
-    hLog = filter(log, acct=acct, start=start, end=end, title=title, location=location, note=note)
+def getLast(log, count, acct='', start='', end='', title='', location='', note='', transType=''):
+    hLog = filter(log, acct=acct, start=start, end=end, title=title, location=location, note=note, transType=transType)
     return hLog.tail(count).sort_values('date')
 
 # Filter the database
-def filter(log, acct='', start='', end='', title='', location='', note=''):
+def filter(log, acct='', start='', end='', title='', location='', note='', transType=''):
     hLog = log
     if acct != '':
         hLog = hLog[(hLog['from'] == acct) | (hLog['to'] == acct)]
@@ -47,6 +47,12 @@ def filter(log, acct='', start='', end='', title='', location='', note=''):
         hLog = hLog[hLog['location'].str.contains(location)]
     if note != '':
         hLog = hLog[hLog['note'].str.contains(note)]
+    if transType == 'to':
+        hLog = hLog[(hLog['from'] == '-') & (hLog['to'] != '-')]
+    elif transType == 'from':
+        hLog = hLog[(hLog['from'] != '-') & (hLog['to'] == '-')]
+    elif transType == 'transfer':
+        hLog = hLog[(hLog['from'] != '-') & (hLog['to'] != '-')]
     return hLog
 
 # Get a optional arguments value, provide default if not provided
@@ -160,12 +166,15 @@ def showHistory(args):
     title = getOpArg(args, '--title')
     loc = getOpArg(args, '--loc')
     note = getOpArg(args, '--note')
+    transType = getOpArg(args, '--transType')
     count = int(getOpArg(args, '--count', default=count))
 
     if acct != '' and acct not in accounts:
         print('Invalid account provided')
         return
-    print(getLast(log, count, acct, start=start, end=end, title=title, location=loc, note=note))
+    results = getLast(log, count, acct, start=start, end=end, title=title, location=loc, note=note, transType=transType)
+    print(results)
+    print('Total:', valueToString(results['amount'].sum()))
 
 # list all accounts
 def listAccounts(args):
@@ -263,8 +272,9 @@ def export(args):
         title = getOpArg(args, '--title')
         loc = getOpArg(args, '--loc')
         note = getOpArg(args, '--note')
+        transType = getOpArg(args, '--transType').lower()
         
-        items = filter(log, acct=acct, start=start, end=end, title=title, location=loc, note=note)
+        items = filter(log, acct=acct, start=start, end=end, title=title, location=loc, note=note, transType=transType)
         items.to_csv(fileLoc)
         print('Exported', len(items.index), 'items to', fileLoc)
     else:
