@@ -106,7 +106,7 @@ def valueToString(value):
     commas = int((digits-1) / 3 )
     for i in range(commas):
         pIndex = valStr.index('.')
-        cIndex = (i + 1) * 3
+        cIndex = pIndex - (i + 1) * 3 - i
         valStr = valStr[:cIndex] + ',' + valStr[cIndex:]
     return valStr
 
