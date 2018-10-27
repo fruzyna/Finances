@@ -4,14 +4,13 @@ import matplotlib.pyplot as plt
 from datetime import datetime as dt
 
 from control import *
-import finance
 
 #
 # Commands
 #
 
 # command to add a new transation
-def add(accounts, log, args):
+def add(confDir, accounts, log, args):
     if len(args) > 1:
         # manual entry
         title, loc = args[1].split('@')
@@ -49,7 +48,7 @@ def add(accounts, log, args):
         print('Invalid account provided!')
 
 # show last x transactions based on criteria
-def showHistory(accounts, log, args):
+def showHistory(confDir, accounts, log, args):
     # limit of transactions
     count = 5
     if len(args) > 1 and '-' not in args[1]:
@@ -73,13 +72,13 @@ def showHistory(accounts, log, args):
     print('Total:', valueToString(results['amount'].sum()))
 
 # list all accounts
-def listAccounts(accounts, log, args):
+def listAccounts(confDir, accounts, log, args):
     print('Current accounts:')
     for acct in accounts:
         print(acct)
 
 # add a new acount
-def addAccount(accounts, log, args):
+def addAccount(confDir, accounts, log, args):
     # prompt if name is not provided
     if len(args) == 1:
         newAcct = input('New account: ')
@@ -92,7 +91,7 @@ def addAccount(accounts, log, args):
         f.write(','.join([acct.upper().replace(' ', '') for acct in accounts]))
 
 # get basic info about an account
-def accountInfo(accounts, log, args):
+def accountInfo(confDir, accounts, log, args):
     if len(args) == 1:
         print('An account name is required')
         return
@@ -115,7 +114,7 @@ def accountInfo(accounts, log, args):
     print('\u001b[1mTotal:', valueToString(delta))
 
 # get balances of all accounts and total
-def balance(accounts, log, args):
+def balance(confDir, accounts, log, args):
     total = 0
     longestName = 0
     longestCost = 0
@@ -155,7 +154,7 @@ def balance(accounts, log, args):
         print(name, ':', ' '*spaces, delta, sep='')
 
 # exports data to a csv file
-def export(accounts, log, args):
+def export(confDir, accounts, log, args):
     if len(args) > 1:
         fileLoc = os.path.expanduser(args[1])
         if not fileLoc.endswith('.csv'):
@@ -177,8 +176,7 @@ def export(accounts, log, args):
         print('Requires at least 1 argument, the file location')
 
 # link the directory else where (dropbox for example)
-def link(accounts, log, args):
-    confDir = finance.confdir
+def link(confDir, accounts, log, args):
     if len(args) > 1:
         to = os.path.expanduser(args[1])
         shutil.move(confDir, to)
@@ -191,7 +189,7 @@ def link(accounts, log, args):
         print('Requires at least 1 argument, the directory to link to')
 
 # plot an account's value over time
-def plot(accounts, log, args):
+def plot(confDir, accounts, log, args):
     # get unit of time
     units = 'days'
     if len(args) > 1:
@@ -217,7 +215,7 @@ def plot(accounts, log, args):
     plt.show()
 
 # give help output
-def helpCmd(accounts, log, args):
+def helpCmd(confDir, accounts, log, args):
     print('Commands')
     print('--------')
     for key in cmds:
@@ -225,7 +223,7 @@ def helpCmd(accounts, log, args):
         print(key, '-', msg)
 
 # warn a command is unknown
-def unknown(accounts, log, args):
+def unknown(confDir, accounts, log, args):
     print('Invalid command,', args[0])
 
 # dictionary of commands  

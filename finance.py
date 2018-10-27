@@ -50,6 +50,6 @@ print()
 # execute command
 if mode in cmds:
     fn,_ = cmds[mode]
-    fn(accounts, log, args)
+    fn(confDir, accounts, log, args)
 else:
-    unknown(accounts, log, args)
+    unknown(confDir, accounts, log, args)
