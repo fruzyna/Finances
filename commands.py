@@ -43,6 +43,7 @@ def add(confDir, accounts, log, args):
     if (src in accounts or src == '-') and (acct in accounts or acct == '-'):
         log.loc[log.shape[0]] = [title, loc, date, src, acct, cost, note]
         #print(getLast(log, 5)) TODO
+        logFile = confDir + 'log.csv'
         log.to_csv(logFile)
     else:
         print('Invalid account provided!')
