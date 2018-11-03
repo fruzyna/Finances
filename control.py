@@ -108,9 +108,30 @@ def totalsPerUnitTime(log, units, acct='', start='', end=''):
     else:
         print('Unit of', units, 'not found, please use \"days\" or \"months\"')
         return pd.Series([])
+
+    # subtract the froms from the tos
+    results = toCounts['amount'].sub(fromCounts['amount'], fill_value=0.0)
+
+    # account for the total at the start
+    if start:
+        baseline = totalAt(log, start, acct=acct)
+        results[0] = results[0] + baseline
+    
+    return results
+
+# Gets the total for an account at a date
+def totalAt(log, date, acct=''):
+    # get appropriate data and split into to and from
+    logs = filter(log, acct=acct, end=date)
+    if acct:
+        toAcct = logs[logs['to'] == acct]
+        fromAcct = logs[logs['from'] == acct]
+    else:
+        toAcct = logs[logs['to'] != '-']
+        fromAcct = logs[logs['from'] != '-']
     
     # subtract the froms from the tos
-    return toCounts['amount'].sub(fromCounts['amount'], fill_value=0.0)
+    return toAcct['amount'].sum() - fromAcct['amount'].sum()
 
 # converts a dollar value to a pretty string
 def valueToString(value):
