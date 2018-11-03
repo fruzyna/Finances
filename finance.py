@@ -9,13 +9,34 @@ from commands import *
 #
 
 args = sys.argv[1:]
-#print('Arguments:', str(args))
+argDict = {}
+
+# process all arguments first
+required = True
+for i, arg in enumerate(args):
+    if arg[0] == '-':
+        required = False
+        if arg[1] == '-':
+            nextArg = args[i+1]
+            if nextArg[0] != '-':
+                argDict[arg[2:]] = nextArg
+            else:
+                print('Invalid argument', arg, 'requires a value.')
+                exit()
+        else:
+            argDict[arg[1:]] = 'True'
+    elif required:
+        if i == 0:
+            argDict['cmd'] = arg
+        else:
+            argDict[i] = arg
+
+#print('Arguments:', str(argDict))
 
 # use default or provided config file
 confDir = '~/.config/finance'
-if '--config' in args:
-    i = args.index('--config')
-    confDir = args[i+1]
+if 'config' in argDict:
+    confDir = argDict['config']
     args = args[:i]
 confDir = os.path.expanduser(confDir)
 
@@ -43,13 +64,12 @@ log = pd.read_csv(logFile, sep=',', header=0, index_col=0, parse_dates=['date'])
 
 # get command
 mode = 'help'
-if len(args) > 0:
-    mode = args[0]
-print()
+if 'cmd' in argDict:
+    mode = argDict['cmd']
 
 # execute command
 if mode in cmds:
     fn,_ = cmds[mode]
-    fn(confDir, accounts, log, args)
+    fn(confDir, accounts, log, argDict)
 else:
-    unknown(confDir, accounts, log, args)
+    unknown(confDir, accounts, log, argDict)

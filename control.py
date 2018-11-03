@@ -59,7 +59,7 @@ def filter(log, acct='', start='', end='', title='', location='', note='', trans
 def getOpArg(args, arg, default=''):
     val = default
     if arg in args:
-        val = args[args.index(arg) + 1]
+        val = args[arg]
     return val
 
 # Gets basic account stats

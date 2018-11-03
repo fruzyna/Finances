@@ -11,16 +11,23 @@ from control import *
 
 # command to add a new transation
 def add(confDir, accounts, log, args):
-    if len(args) > 1:
-        # manual entry
-        title, loc = args[1].split('@')
-        acct = args[2].upper()
-        src = '-'
-        cost = float(args[3])
-        
-        # get optional arguments
-        date = getOpArg(args, '--date', default=dt.today().strftime('%m-%d-%Y')).replace('/', '-')
-        note = getOpArg(args, '--note')
+    if 1 in args:
+        if 3 in args:
+            # manual entry
+            if '@' in args[1]:
+                title, loc = args[1].split('@')
+                acct = args[2].upper()
+                src = '-'
+                cost = float(args[3])
+                
+                # get optional arguments
+                date = getOpArg(args, 'date', default=dt.today().strftime('%m-%d-%Y')).replace('/', '-')
+                note = getOpArg(args, 'note')
+            else:
+                print('First argument must be formated \"[title]@[location]\"')
+                return
+        else:
+            print('Requires arguments \"[title]@[location] [account] [amount]\"')
     else:
         # guided entry
         title = input('Title: ')
@@ -52,22 +59,25 @@ def add(confDir, accounts, log, args):
 def showHistory(confDir, accounts, log, args):
     # limit of transactions
     count = 5
-    if len(args) > 1 and '-' not in args[1]:
+    if 1 in args:
         count = int(args[1])
 
     # optional arguments
-    acct = getOpArg(args, '--acct').upper()
-    end = getOpArg(args, '--end')
-    start = getOpArg(args, '--start')
-    title = getOpArg(args, '--title')
-    loc = getOpArg(args, '--loc')
-    note = getOpArg(args, '--note')
-    transType = getOpArg(args, '--transType')
-    count = int(getOpArg(args, '--count', default=count))
+    acct = getOpArg(args, 'acct').upper()
+    end = getOpArg(args, 'end')
+    start = getOpArg(args, 'start')
+    title = getOpArg(args, 'title')
+    loc = getOpArg(args, 'loc')
+    note = getOpArg(args, 'note')
+    transType = getOpArg(args, 'transType')
+    count = int(getOpArg(args, 'count', default=count))
 
-    if acct != '' and acct not in accounts:
+    # confirm a proved account is real
+    if acct and acct not in accounts:
         print('Invalid account provided')
         return
+
+    # get and print results
     results = getLast(log, count, acct, start=start, end=end, title=title, location=loc, note=note, transType=transType)
     print(results)
     print('Total:', valueToString(results['amount'].sum()))
@@ -81,19 +91,21 @@ def listAccounts(confDir, accounts, log, args):
 # add a new acount
 def addAccount(confDir, accounts, log, args):
     # prompt if name is not provided
-    if len(args) == 1:
-        newAcct = input('New account: ')
-    else:
+    if 1 in args:
         newAcct = args[1]
+    else:
+        newAcct = input('New account: ')
 
     # write to file
     accounts.append(newAcct)
+    acctFile = confDir + 'accounts.csv'
     with open(acctFile, 'w+') as f:
         f.write(','.join([acct.upper().replace(' ', '') for acct in accounts]))
 
 # get basic info about an account
 def accountInfo(confDir, accounts, log, args):
-    if len(args) == 1:
+    # check account name
+    if 1 not in args:
         print('An account name is required')
         return
     acct = args[1].upper()
@@ -102,8 +114,8 @@ def accountInfo(confDir, accounts, log, args):
         return
 
     # get optional arguments
-    starting = getOpArg(args, '--start')
-    ending = getOpArg(args, '--end')
+    starting = getOpArg(args, 'start')
+    ending = getOpArg(args, 'end')
 
     # fetch and print stats
     title = acct + ' Stats:'
@@ -156,20 +168,21 @@ def balance(confDir, accounts, log, args):
 
 # exports data to a csv file
 def export(confDir, accounts, log, args):
-    if len(args) > 1:
+    if 1 in args:
         fileLoc = os.path.expanduser(args[1])
         if not fileLoc.endswith('.csv'):
             fileLoc += '.csv'
 
         # optional arguments
-        acct = getOpArg(args, '--acct').upper()
-        end = getOpArg(args, '--end').upper()
-        start = getOpArg(args, '--start').upper()
-        title = getOpArg(args, '--title')
-        loc = getOpArg(args, '--loc')
-        note = getOpArg(args, '--note')
-        transType = getOpArg(args, '--transType').lower()
+        acct = getOpArg(args, 'acct').upper()
+        end = getOpArg(args, 'end').upper()
+        start = getOpArg(args, 'start').upper()
+        title = getOpArg(args, 'title')
+        loc = getOpArg(args, 'loc')
+        note = getOpArg(args, 'note')
+        transType = getOpArg(args, 'transType').lower()
         
+        # fetch items to export
         items = filter(log, acct=acct, start=start, end=end, title=title, location=loc, note=note, transType=transType)
         items.to_csv(fileLoc)
         print('Exported', len(items.index), 'items to', fileLoc)
@@ -178,7 +191,7 @@ def export(confDir, accounts, log, args):
 
 # link the directory else where (dropbox for example)
 def link(confDir, accounts, log, args):
-    if len(args) > 1:
+    if 1 in args:
         to = os.path.expanduser(args[1])
         shutil.move(confDir, to)
         print('Moved data to', to)
@@ -193,15 +206,13 @@ def link(confDir, accounts, log, args):
 def plot(confDir, accounts, log, args):
     # get unit of time
     units = 'days'
-    if len(args) > 1:
+    if 1 in args:
         units = args[1]
-        if units[0] == '-':
-            units = 'days'
 
     # get optional arguments
-    acct = getOpArg(args, '--acct').upper()
-    start = getOpArg(args, '--start').upper()
-    end = getOpArg(args, '--end').upper()
+    acct = getOpArg(args, 'acct').upper()
+    start = getOpArg(args, 'start').upper()
+    end = getOpArg(args, 'end').upper()
 
     # request data
     results = totalsPerUnitTime(log, units, acct=acct, start=start, end=end)
@@ -225,7 +236,7 @@ def helpCmd(confDir, accounts, log, args):
 
 # warn a command is unknown
 def unknown(confDir, accounts, log, args):
-    print('Invalid command,', args[0])
+    print('Invalid command,', args['cmd'])
 
 # dictionary of commands  
 cmds = dict({
