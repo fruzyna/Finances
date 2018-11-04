@@ -213,17 +213,22 @@ def plot(confDir, accounts, log, args):
     acct = getOpArg(args, 'acct').upper()
     start = getOpArg(args, 'start').upper()
     end = getOpArg(args, 'end').upper()
+    invert = getOpArg(args, 'invert', default=False)
 
     # request data
     results = totalsPerUnitTime(log, units, acct=acct, start=start, end=end)
 
     # give up if request failed
     if results.empty:
+        print('No results found')
         return
 
     # plot in a new window
     fig, ax = plt.subplots()
     results.cumsum().plot(ax=ax)
+    low, hi = ax.get_ylim()
+    if invert:
+        plt.ylim(hi, low)
     plt.show()
 
 # give help output
