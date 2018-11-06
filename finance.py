@@ -14,7 +14,7 @@ argDict = {}
 # process all arguments first
 required = True
 for i, arg in enumerate(args):
-    if arg[0] == '-':
+    if arg[0] == '-' and not arg[1].isdigit():
         required = False
         if arg[1] == '-':
             nextArg = args[i+1]
