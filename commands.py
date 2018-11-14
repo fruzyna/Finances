@@ -214,6 +214,9 @@ def plot(confDir, accounts, log, args):
     start = getOpArg(args, 'start').upper()
     end = getOpArg(args, 'end').upper()
     invert = getOpArg(args, 'invert', default=False)
+    points = getOpArg(args, 'dots', default=False)
+    noLine = getOpArg(args, 'noline', default=False)
+    allPoints = getOpArg(args, 'alldays', default=False)
 
     # request data
     results = totalsPerUnitTime(log, units, acct=acct, start=start, end=end)
@@ -223,9 +226,19 @@ def plot(confDir, accounts, log, args):
         print('No results found')
         return
 
+    style = ''
+    if points or noLine:
+        style += '.'
+    if not noLine:
+        style += '-'
+
     # plot in a new window
     fig, ax = plt.subplots()
-    results.cumsum().plot(ax=ax)
+    sums = results.cumsum()
+    if allPoints:
+        sums.index = pd.to_datetime(sums.index, format='%Y/%m/%d')
+        sums = sums.resample('D').fillna(method='ffill')
+    sums.plot(ax=ax, style=style)
     low, hi = ax.get_ylim()
     if invert:
         plt.ylim(hi, low)
