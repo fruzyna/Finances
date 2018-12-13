@@ -2,6 +2,7 @@ import os, shutil
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime as dt
+from tabulate import tabulate
 
 from control import *
 
@@ -122,9 +123,8 @@ def accountInfo(confDir, accounts, log, args):
     print(title)
     print('-'*len(title))
     add, sub, delta, toTrans, fromTrans, trans = getAccountInfo(log, acct, starting, ending)
-    print('Transactions: +', toTrans, ' -', fromTrans, ' =', trans, sep='')
-    print('Delta: +', add, ' -', sub, sep='')
-    print('\u001b[1mTotal:', valueToString(delta))
+    print(tabulate([['Count', toTrans, fromTrans], ['Value', valueToString(add), valueToString(sub)]], headers=['', 'In', 'Out']))
+    print('\n\u001b[1mNet Total:', valueToString(delta))
 
 # get balances of all accounts and total
 def balance(confDir, accounts, log, args):
@@ -259,11 +259,13 @@ def unknown(confDir, accounts, log, args):
 # dictionary of commands  
 cmds = dict({
     'add': (add, 'Add a new item to the log.'),
-    'hist': (showHistory, 'Display the last X items, default is 5.'),
+    'history': (showHistory, 'Display the last X items, default is 5.'),
+    'hist': (showHistory, 'Shorter form of the history command.'),
     'listAccts': (listAccounts, 'List all known accounts.'),
     'newAcct': (addAccount, 'Add a new account.'),
     'acctInfo': (accountInfo, 'Display a brief summary of a given account'),
     'balance': (balance, 'Provide the balance of all accounts, as well as the total.'),
+    'bal': (balance, 'Shorter form of the balance command.'),
     'help': (helpCmd, 'List and describe all command options'),
     'export': (export, 'Export entries to a new file.'),
     'plot': (plot, 'Plot total value per day/month over time'),
