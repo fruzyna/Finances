@@ -13,7 +13,7 @@ argDict = {}
 
 # process all arguments first
 required = True
-if args[-1][0:2] == '--':
+if len(args) > 0 and sargs[-1][0:2] == '--':
     print('Invalid argument', args[-1], 'requires a value.')
     exit()
 for i, arg in enumerate(args):
