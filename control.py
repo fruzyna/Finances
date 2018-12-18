@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import numpy as np
 from datetime import datetime as dt
 from decimal import *
 
@@ -99,14 +100,23 @@ def totalsPerUnitTime(log, units, acct='', start='', end=''):
         fromAcct = logs[logs['from'] != '-']
 
     # sum into the requested units
-    if units == 'days':
+    if units.startswith('day'):
         toCounts = toAcct.groupby(pd.to_datetime(toAcct['date']).dt.date).agg({'amount': 'sum'})
         fromCounts = fromAcct.groupby(pd.to_datetime(fromAcct['date']).dt.date).agg({'amount': 'sum'})
-    elif units == 'months':
+    elif units.startswith('week'):
+        toCounts = toAcct.groupby(pd.to_datetime(toAcct['date']).dt.week).agg({'amount': 'sum'})
+        fromCounts = fromAcct.groupby(pd.to_datetime(fromAcct['date']).dt.week).agg({'amount': 'sum'})
+    elif units.startswith('month'):
         toCounts = toAcct.groupby(pd.to_datetime(toAcct['date']).dt.month).agg({'amount': 'sum'})
         fromCounts = fromAcct.groupby(pd.to_datetime(fromAcct['date']).dt.month).agg({'amount': 'sum'})
+    elif units.startswith('quarter'):
+        toCounts = toAcct.groupby(pd.to_datetime(toAcct['date']).dt.quarter).agg({'amount': 'sum'})
+        fromCounts = fromAcct.groupby(pd.to_datetime(fromAcct['date']).dt.quarter).agg({'amount': 'sum'})
+    elif units.startswith('year'):
+        toCounts = toAcct.groupby(pd.to_datetime(toAcct['date']).dt.year).agg({'amount': 'sum'})
+        fromCounts = fromAcct.groupby(pd.to_datetime(fromAcct['date']).dt.year).agg({'amount': 'sum'})
     else:
-        print('Unit of', units, 'not found, please use \"days\" or \"months\"')
+        print('Unit of', units, 'not found, please use \"days\", \"weeks\", \"months\", or \"quarters\"')
         return pd.Series([])
 
     # subtract the froms from the tos
