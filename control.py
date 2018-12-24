@@ -101,17 +101,17 @@ def totalsPerUnitTime(log, units, acct='', start='', end=''):
 
     # sum into the requested units
     if units.startswith('day'):
-        toCounts = toAcct.groupby(pd.to_datetime(toAcct['date']).dt.date).agg({'amount': 'sum'})
-        fromCounts = fromAcct.groupby(pd.to_datetime(fromAcct['date']).dt.date).agg({'amount': 'sum'})
+        toCounts = toAcct.groupby([pd.to_datetime(toAcct['date']).dt.year, pd.to_datetime(toAcct['date']).dt.date]).agg({'amount': 'sum'})
+        fromCounts = fromAcct.groupby([pd.to_datetime(fromAcct['date']).dt.year, pd.to_datetime(fromAcct['date']).dt.date]).agg({'amount': 'sum'})
     elif units.startswith('week'):
-        toCounts = toAcct.groupby(pd.to_datetime(toAcct['date']).dt.week).agg({'amount': 'sum'})
-        fromCounts = fromAcct.groupby(pd.to_datetime(fromAcct['date']).dt.week).agg({'amount': 'sum'})
+        toCounts = toAcct.groupby([pd.to_datetime(toAcct['date']).dt.year, pd.to_datetime(toAcct['date']).dt.week]).agg({'amount': 'sum'})
+        fromCounts = fromAcct.groupby([pd.to_datetime(fromAcct['date']).dt.year, pd.to_datetime(fromAcct['date']).dt.week]).agg({'amount': 'sum'})
     elif units.startswith('month'):
-        toCounts = toAcct.groupby(pd.to_datetime(toAcct['date']).dt.month).agg({'amount': 'sum'})
-        fromCounts = fromAcct.groupby(pd.to_datetime(fromAcct['date']).dt.month).agg({'amount': 'sum'})
+        toCounts = toAcct.groupby([pd.to_datetime(toAcct['date']).dt.year, pd.to_datetime(toAcct['date']).dt.month]).agg({'amount': 'sum'})
+        fromCounts = fromAcct.groupby([pd.to_datetime(fromAcct['date']).dt.year, pd.to_datetime(fromAcct['date']).dt.month]).agg({'amount': 'sum'})
     elif units.startswith('quarter'):
-        toCounts = toAcct.groupby(pd.to_datetime(toAcct['date']).dt.quarter).agg({'amount': 'sum'})
-        fromCounts = fromAcct.groupby(pd.to_datetime(fromAcct['date']).dt.quarter).agg({'amount': 'sum'})
+        toCounts = toAcct.groupby([pd.to_datetime(toAcct['date']).dt.year, pd.to_datetime(toAcct['date']).dt.quarter]).agg({'amount': 'sum'})
+        fromCounts = fromAcct.groupby([pd.to_datetime(fromAcct['date']).dt.year, pd.to_datetime(fromAcct['date']).dt.quarter]).agg({'amount': 'sum'})
     elif units.startswith('year'):
         toCounts = toAcct.groupby(pd.to_datetime(toAcct['date']).dt.year).agg({'amount': 'sum'})
         fromCounts = fromAcct.groupby(pd.to_datetime(fromAcct['date']).dt.year).agg({'amount': 'sum'})

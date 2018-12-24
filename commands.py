@@ -119,19 +119,24 @@ def accountInfo(confDir, accounts, log, args):
     # get optional arguments
     starting = getOpArg(args, 'start')
     ending = getOpArg(args, 'end')
+    reach = getOpArg(args, 'months', 6)
 
     # request data
     results = totalsPerUnitTime(log, 'months', acct=acct, start=starting, end=ending)
 
-    # fetch and print stats
+    # print title
     title = acct + ' Stats:'
     print(title)
     print('-'*len(title))
 
-    rows = []
-    for month, amount in results.iteritems():
-        rows.append([months[month-1], valueToString(amount)])
-    print(tabulate(rows, headers=['Month', 'Delta']), '\n')
+    # fetch last 6 months and print
+    if reach != '0':
+        rows = []
+        for month, amount in results.iteritems():
+            year, month = month
+            month = months[month-1]
+            rows.append([month + ' ' + str(year), valueToString(amount)])
+        print(tabulate(rows[-int(reach):], headers=['Month', 'Delta']), '\n')
 
     add, sub, delta, toTrans, fromTrans, trans = getAccountInfo(log, acct, starting, ending)
     print(tabulate([['Count', toTrans, fromTrans], ['Value', valueToString(add), valueToString(sub)]], headers=['', 'In', 'Out']))
