@@ -103,6 +103,8 @@ def addAccount(confDir, accounts, log, args):
     with open(acctFile, 'w+') as f:
         f.write(','.join([acct.upper().replace(' ', '') for acct in accounts]))
 
+months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
 # get basic info about an account
 def accountInfo(confDir, accounts, log, args):
     # check account name
@@ -118,10 +120,19 @@ def accountInfo(confDir, accounts, log, args):
     starting = getOpArg(args, 'start')
     ending = getOpArg(args, 'end')
 
+    # request data
+    results = totalsPerUnitTime(log, 'months', acct=acct, start=starting, end=ending)
+
     # fetch and print stats
     title = acct + ' Stats:'
     print(title)
     print('-'*len(title))
+
+    rows = []
+    for month, amount in results.iteritems():
+        rows.append([months[month-1], valueToString(amount)])
+    print(tabulate(rows, headers=['Month', 'Delta']), '\n')
+
     add, sub, delta, toTrans, fromTrans, trans = getAccountInfo(log, acct, starting, ending)
     print(tabulate([['Count', toTrans, fromTrans], ['Value', valueToString(add), valueToString(sub)]], headers=['', 'In', 'Out']))
     print('\n\u001b[1mNet Total:', valueToString(delta))
