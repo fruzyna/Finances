@@ -165,3 +165,7 @@ def valueToString(value):
         cIndex = pIndex - (i + 1) * 3 - i
         valStr = valStr[:cIndex] + ',' + valStr[cIndex:]
     return valStr
+
+# save a df to a file
+def save(log, file):
+    log.to_csv(file, index=False)

@@ -10,6 +10,19 @@ from control import *
 # Commands
 #
 
+# command to delete a row
+def delete(confDir, accounts, log, args):
+    if 1 in args:
+        i = int(args[1])
+        answer = input(' '.join(['Would you like to remove?', log.loc[i, 'title'], log.loc[i, 'location'], log.loc[i, 'to'], log.loc[i, 'from'], str(log.loc[i, 'amount']), '[y/N] ']))
+        if answer == 'y':
+            log = log.drop(i)
+            logFile = confDir + 'log.csv'
+            save(log, logFile)
+            print('Item deleted')
+    else:
+        print('Please provide a row number')
+
 # command to add a new transation
 def add(confDir, accounts, log, args):
     if 1 in args:
@@ -51,7 +64,7 @@ def add(confDir, accounts, log, args):
     if (src in accounts or src == '-') and (acct in accounts or acct == '-'):
         log.loc[log.shape[0]] = [title, loc, date, src, acct, cost, note]
         logFile = confDir + 'log.csv'
-        log.to_csv(logFile, index=False)
+        save(log, logFile)
     else:
         print('Invalid account provided!')
 
@@ -199,7 +212,7 @@ def export(confDir, accounts, log, args):
         
         # fetch items to export
         items = filter(log, acct=acct, start=start, end=end, title=title, location=loc, note=note, transType=transType)
-        items.to_csv(fileLoc, index=False)
+        save(items, fileLoc)
         print('Exported', len(items.index), 'items to', fileLoc)
     else:
         print('Requires at least 1 argument, the file location')
@@ -283,6 +296,8 @@ def unknown(confDir, accounts, log, args):
 # dictionary of commands  
 cmds = dict({
     'add': (add, 'Add a new item to the log.'),
+    'del': (delete, 'Remove an item from the log.'),
+    'delete': (delete, 'Remove an item from the log.'),
     'history': (showHistory, 'Display the last X items, default is 5.'),
     'hist': (showHistory, 'Shorter form of the history command.'),
     'listAccts': (listAccounts, 'List all known accounts.'),
