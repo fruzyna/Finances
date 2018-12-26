@@ -50,9 +50,8 @@ def add(confDir, accounts, log, args):
     # add to log
     if (src in accounts or src == '-') and (acct in accounts or acct == '-'):
         log.loc[log.shape[0]] = [title, loc, date, src, acct, cost, note]
-        #print(getLast(log, 5)) TODO
         logFile = confDir + 'log.csv'
-        log.to_csv(logFile)
+        log.to_csv(logFile, index=False)
     else:
         print('Invalid account provided!')
 
@@ -200,7 +199,7 @@ def export(confDir, accounts, log, args):
         
         # fetch items to export
         items = filter(log, acct=acct, start=start, end=end, title=title, location=loc, note=note, transType=transType)
-        items.to_csv(fileLoc)
+        items.to_csv(fileLoc, index=False)
         print('Exported', len(items.index), 'items to', fileLoc)
     else:
         print('Requires at least 1 argument, the file location')
@@ -288,11 +287,11 @@ cmds = dict({
     'hist': (showHistory, 'Shorter form of the history command.'),
     'listAccts': (listAccounts, 'List all known accounts.'),
     'newAcct': (addAccount, 'Add a new account.'),
-    'acctInfo': (accountInfo, 'Display a brief summary of a given account'),
+    'acctInfo': (accountInfo, 'Display a brief summary of a given account.'),
     'balance': (balance, 'Provide the balance of all accounts, as well as the total.'),
     'bal': (balance, 'Shorter form of the balance command.'),
-    'help': (helpCmd, 'List and describe all command options'),
+    'help': (helpCmd, 'List and describe all command options.'),
     'export': (export, 'Export entries to a new file.'),
-    'plot': (plot, 'Plot total value per day/month over time'),
+    'plot': (plot, 'Plot total value per day/month over time.'),
     'link': (link, 'Link the configuration directory to a given directory.')
 })

@@ -63,7 +63,7 @@ if not os.path.exists(logFile):
 with open(acctFile, 'r') as f:
     acctStr = f.read()
     accounts = acctStr.split(',')
-log = pd.read_csv(logFile, sep=',', header=0, index_col=0, parse_dates=['date'])
+log = pd.read_csv(logFile, sep=',', header=0, parse_dates=['date'])[['title', 'location', 'date', 'from', 'to', 'amount', 'note']]
 
 # get command
 mode = 'help'
