@@ -115,8 +115,6 @@ def addAccount(confDir, accounts, log, args):
     with open(acctFile, 'w+') as f:
         f.write(','.join([acct.upper().replace(' ', '') for acct in accounts]))
 
-months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-
 # get basic info about an account
 def accountInfo(confDir, accounts, log, args):
     # check account name
@@ -145,9 +143,7 @@ def accountInfo(confDir, accounts, log, args):
     if reach != '0':
         rows = []
         for month, amount in results.iteritems():
-            year, month = month
-            month = months[month-1]
-            rows.append([month + ' ' + str(year), valueToString(amount)])
+            rows.append([month, valueToString(amount)])
         print(tabulate(rows[-int(reach):], headers=['Month', 'Delta']), '\n')
 
     add, sub, delta, toTrans, fromTrans, trans = getAccountInfo(log, acct, starting, ending)
@@ -236,6 +232,7 @@ def plot(confDir, accounts, log, args):
     units = 'days'
     if 1 in args:
         units = args[1]
+    units = units.lower()
 
     # get optional arguments
     acct = getOpArg(args, 'acct').upper()
@@ -274,20 +271,49 @@ def plot(confDir, accounts, log, args):
     if allPoints:
         sums.index = pd.to_datetime(sums.index, format='%Y/%m/%d')
         sums = sums.resample('D').fillna(method='ffill')
-        
-    sums.plot(kind=kind, ax=ax, style=style)
-    low, hi = ax.get_ylim()
+
+    title = acct[0] + acct[1:].lower() + ' Account'
+    if not title:
+        title = 'Total'
+    if totals:
+        title += ' Delta'
+    title += ' by '
+    if units.startswith('day'):
+        units = 'Day'
+    elif units.startswith('week'):
+        units = 'Week'
+    elif units.startswith('month'):
+        units = 'Month'
+    elif units.startswith('quarter'):
+        units = 'Quarter'
+    elif units.startswith('year'):
+        units = 'Year'
+    title += units
+    
+    ax = sums.plot(kind=kind, ax=ax, style=style, title=title)
+    ax.set_xlabel(units)
+    ax.set_ylabel('Dollars')
     if invert:
+        low, hi = ax.get_ylim()
         plt.ylim(hi, low)
     plt.show()
 
 # give help output
 def helpCmd(confDir, accounts, log, args):
-    print('Commands')
-    print('--------')
-    for key in cmds:
-        _, msg = cmds[key]
-        print(key, '-', msg)
+    if 1 in args:
+        cmd = args[1]
+        if cmd in cmds:
+            print(cmd)
+            print('-' * len(cmd))
+            print(cmds[cmd][1])
+            print(cmds[cmd][2])
+        else:
+            print('Command \"', cmd, '\" not found.', sep='')
+    else:
+        print('Commands')
+        print('--------')
+        for key in cmds:
+            print(key, '-', cmds[key][1])
 
 # warn a command is unknown
 def unknown(confDir, accounts, log, args):
@@ -295,18 +321,18 @@ def unknown(confDir, accounts, log, args):
 
 # dictionary of commands  
 cmds = dict({
-    'add': (add, 'Add a new item to the log.'),
-    'del': (delete, 'Remove an item from the log.'),
-    'delete': (delete, 'Remove an item from the log.'),
-    'history': (showHistory, 'Display the last X items, default is 5.'),
-    'hist': (showHistory, 'Shorter form of the history command.'),
-    'listAccts': (listAccounts, 'List all known accounts.'),
-    'newAcct': (addAccount, 'Add a new account.'),
-    'acctInfo': (accountInfo, 'Display a brief summary of a given account.'),
-    'balance': (balance, 'Provide the balance of all accounts, as well as the total.'),
-    'bal': (balance, 'Shorter form of the balance command.'),
-    'help': (helpCmd, 'List and describe all command options.'),
-    'export': (export, 'Export entries to a new file.'),
-    'plot': (plot, 'Plot total value per day/month over time.'),
-    'link': (link, 'Link the configuration directory to a given directory.')
+    'acctInfo': (accountInfo, 'Display a brief summary of a given account.', 'acctInfo account [--start start_date] [--end end_date] [--months months_back]'),
+    'add': (add, 'Add a new item to the log.', 'add title@location account amount [--date date] [--note note]'),
+    'balance': (balance, 'Provide the balance of all accounts, as well as the total.', 'balance'),
+    'bal': (balance, 'Shorter form of the balance command.', 'bal'),
+    'delete': (delete, 'Remove an entry from the log.', 'delete entry_index'),
+    'del': (delete, 'Shorter form of the delete command.', 'del entry_index'),
+    'export': (export, 'Export entries to a new file.', 'export log_file'),
+    'help': (helpCmd, 'List and describe all command options.', 'help [command]'),
+    'history': (showHistory, 'Display the last X items, default is 5.', 'history [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),
+    'hist': (showHistory, 'Shorter form of the history command.', 'hist [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),
+    'link': (link, 'Link the configuration directory to a given directory.', 'export link_destination'),
+    'listAccts': (listAccounts, 'List all known accounts.', 'listAccts'),
+    'newAcct': (addAccount, 'Add a new account.', 'newAcct account'),
+    'plot': (plot, 'Plot total value per day/month over time.', 'plot [units] [--start start_date] [--end end_date] [--acct account] [-invert] [-dots] [-noline] [-alldays] [-totals]')
 })

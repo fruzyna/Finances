@@ -72,7 +72,7 @@ if 'cmd' in argDict:
 
 # execute command
 if mode in cmds:
-    fn,_ = cmds[mode]
+    fn = cmds[mode][0]
     fn(confDir, accounts, log, argDict)
 else:
     unknown(confDir, accounts, log, argDict)

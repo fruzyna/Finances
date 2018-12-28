@@ -88,6 +88,8 @@ def getAccountInfo(log, account, start='', end=''):
     trans = toTrans + fromTrans
     return add, sub, delta, toTrans, fromTrans, trans
 
+months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
 # Gets the total for an account per day/month
 def totalsPerUnitTime(log, units, acct='', start='', end=''):
     # get appropriate data and split into to and from
@@ -100,24 +102,28 @@ def totalsPerUnitTime(log, units, acct='', start='', end=''):
         fromAcct = logs[logs['from'] != '-']
 
     # sum into the requested units
+    toDate = pd.to_datetime(toAcct['date'])
+    fromDate = pd.to_datetime(fromAcct['date'])
     if units.startswith('day'):
-        toCounts = toAcct.groupby([pd.to_datetime(toAcct['date']).dt.year, pd.to_datetime(toAcct['date']).dt.date]).agg({'amount': 'sum'})
-        fromCounts = fromAcct.groupby([pd.to_datetime(fromAcct['date']).dt.year, pd.to_datetime(fromAcct['date']).dt.date]).agg({'amount': 'sum'})
+        groupTo = toDate.dt.date
+        groupFrom = fromDate.dt.date
     elif units.startswith('week'):
-        toCounts = toAcct.groupby([pd.to_datetime(toAcct['date']).dt.year, pd.to_datetime(toAcct['date']).dt.week]).agg({'amount': 'sum'})
-        fromCounts = fromAcct.groupby([pd.to_datetime(fromAcct['date']).dt.year, pd.to_datetime(fromAcct['date']).dt.week]).agg({'amount': 'sum'})
+        groupTo = [toDate.dt.year, toDate.dt.week]
+        groupFrom = [fromDate.dt.year, fromDate.dt.week]
     elif units.startswith('month'):
-        toCounts = toAcct.groupby([pd.to_datetime(toAcct['date']).dt.year, pd.to_datetime(toAcct['date']).dt.month]).agg({'amount': 'sum'})
-        fromCounts = fromAcct.groupby([pd.to_datetime(fromAcct['date']).dt.year, pd.to_datetime(fromAcct['date']).dt.month]).agg({'amount': 'sum'})
+        groupTo = [toDate.dt.year, toDate.dt.month]
+        groupFrom = [fromDate.dt.year, fromDate.dt.month]
     elif units.startswith('quarter'):
-        toCounts = toAcct.groupby([pd.to_datetime(toAcct['date']).dt.year, pd.to_datetime(toAcct['date']).dt.quarter]).agg({'amount': 'sum'})
-        fromCounts = fromAcct.groupby([pd.to_datetime(fromAcct['date']).dt.year, pd.to_datetime(fromAcct['date']).dt.quarter]).agg({'amount': 'sum'})
+        groupTo = [toDate.dt.year, toDate.dt.quarter]
+        groupFrom = [fromDate.dt.year, fromDate.dt.quarter]
     elif units.startswith('year'):
-        toCounts = toAcct.groupby(pd.to_datetime(toAcct['date']).dt.year).agg({'amount': 'sum'})
-        fromCounts = fromAcct.groupby(pd.to_datetime(fromAcct['date']).dt.year).agg({'amount': 'sum'})
+        groupTo = toDate.dt.year
+        groupFrom = fromDate.dt.year
     else:
         print('Unit of', units, 'not found, please use \"days\", \"weeks\", \"months\", or \"quarters\"')
         return pd.Series([])
+    toCounts = toAcct.groupby(groupTo).agg({'amount': 'sum'})
+    fromCounts = fromAcct.groupby(groupFrom).agg({'amount': 'sum'})
 
     # subtract the froms from the tos
     results = toCounts['amount'].sub(fromCounts['amount'], fill_value=0.0)
@@ -126,6 +132,25 @@ def totalsPerUnitTime(log, units, acct='', start='', end=''):
     if start:
         baseline = totalAt(log, start, acct=acct)
         results[0] = results[0] + baseline
+
+    # replace tuples with human readable dates
+    if not (units.startswith('year') or units.startswith('day')):
+        rows = []
+        for index,_ in results.iteritems():
+            year, unit = index
+            if units.startswith('week'):
+                row = 'Week '
+            elif units.startswith('quarter'):
+                row = 'Q'
+
+            if units.startswith('month'):
+                row = months[unit - 1]
+            else:
+                row += str(unit)
+
+            row += ' ' + str(year)
+            rows.append(row)
+        results.index = rows
     
     return results
 
