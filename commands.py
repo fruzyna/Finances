@@ -213,22 +213,9 @@ def export(confDir, accounts, log, args):
     else:
         print('Requires at least 1 argument, the file location')
 
-# link the directory else where (dropbox for example)
-def link(confDir, accounts, log, args):
-    if 1 in args:
-        to = os.path.expanduser(args[1])
-        shutil.move(confDir, to)
-        print('Moved data to', to)
-        if confDir.endswith('/'):
-            confDir = confDir[:-1]
-        os.symlink(to, confDir)
-        print('Linked', confDir, 'to', to)
-    else:
-        print('Requires at least 1 argument, the directory to link to')
-
 # plot an account's value over time
 def plot(confDir, accounts, log, args):
-    # get unit of time
+    # get unit of time, default is days
     units = 'days'
     if 1 in args:
         units = args[1]
@@ -252,6 +239,7 @@ def plot(confDir, accounts, log, args):
         print('No results found')
         return
 
+    # set style of line
     style = ''
     if points or noLine:
         style += '.'
@@ -268,12 +256,17 @@ def plot(confDir, accounts, log, args):
     elif start == '':
         sums = sums[1:]
     
-    if allPoints:
+    # fill empty points
+    if allPoints and units.startswith('day'):
         sums.index = pd.to_datetime(sums.index, format='%Y/%m/%d')
         sums = sums.resample('D').fillna(method='ffill')
+    elif allPoints:
+        print('-alldays can only be used with the units as days')
 
-    title = acct[0] + acct[1:].lower() + ' Account'
-    if not title:
+    # build title of plot
+    if acct:
+        title = acct[0] + acct[1:].lower() + ' Account'
+    else:
         title = 'Total'
     if totals:
         title += ' Delta'
@@ -290,6 +283,7 @@ def plot(confDir, accounts, log, args):
         units = 'Year'
     title += units
     
+    # display plot
     ax = sums.plot(kind=kind, ax=ax, style=style, title=title)
     ax.set_xlabel(units)
     ax.set_ylabel('Dollars')
@@ -298,9 +292,21 @@ def plot(confDir, accounts, log, args):
         plt.ylim(hi, low)
     plt.show()
 
+# reset the configuration
+def reset(confDir, accounts, log, args):
+    confirm = input('Are you sure you want to delete everything? [y/N] ')
+    if confirm.lower() == 'y':
+        confDir = confDir[:-1]
+        if os.path.islink(confDir):
+            os.unlink(confDir)
+        else:
+            shutil.rmtree(confDir)
+        print('Reset complete')
+
 # give help output
 def helpCmd(confDir, accounts, log, args):
     if 1 in args:
+        # print description of given command
         cmd = args[1]
         if cmd in cmds:
             print(cmd)
@@ -310,6 +316,7 @@ def helpCmd(confDir, accounts, log, args):
         else:
             print('Command \"', cmd, '\" not found.', sep='')
     else:
+        # if no command is given, summarize all commands
         print('Commands')
         print('--------')
         for key in cmds:
@@ -331,8 +338,8 @@ cmds = dict({
     'help': (helpCmd, 'List and describe all command options.', 'help [command]'),
     'history': (showHistory, 'Display the last X items, default is 5.', 'history [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),
     'hist': (showHistory, 'Shorter form of the history command.', 'hist [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),
-    'link': (link, 'Link the configuration directory to a given directory.', 'export link_destination'),
     'listAccts': (listAccounts, 'List all known accounts.', 'listAccts'),
     'newAcct': (addAccount, 'Add a new account.', 'newAcct account'),
-    'plot': (plot, 'Plot total value per day/month over time.', 'plot [units] [--start start_date] [--end end_date] [--acct account] [-invert] [-dots] [-noline] [-alldays] [-totals]')
+    'plot': (plot, 'Plot total value per day/month over time.', 'plot [units] [--start start_date] [--end end_date] [--acct account] [-invert] [-dots] [-noline] [-alldays] [-totals]'),
+    'reset': (reset, 'Resets the existing configuration.', 'reset')
 })

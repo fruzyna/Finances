@@ -51,7 +51,14 @@ logFile = confDir + 'log.csv'
 
 # create config file if they don't exist
 if not os.path.exists(confDir):
-    os.makedirs(confDir)
+    choice = input('No configuration exists. Would you like to link to an existing configuration directory? [y/N] ')
+    if choice.lower() == 'y':
+        to = input('Where is the existing directory: ')
+        to = os.path.expanduser(to)
+        os.symlink(to, confDir[:-1])
+    else:
+        print('Creating new configuration...')
+        os.makedirs(confDir)
 
 if not os.path.exists(acctFile):
     setupAccts(acctFile)
