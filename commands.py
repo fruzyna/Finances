@@ -94,6 +94,7 @@ def showHistory(confDir, accounts, log, args):
     results = getLast(log, count, acct, start=start, end=end, title=title, location=loc, note=note, transType=transType)
     print(results)
     print('Total:', valueToString(results['amount'].sum()))
+    return results
 
 # list all accounts
 def listAccounts(confDir, accounts, log, args):
@@ -212,6 +213,15 @@ def export(confDir, accounts, log, args):
         print('Exported', len(items.index), 'items to', fileLoc)
     else:
         print('Requires at least 1 argument, the file location')
+
+# plot historical values
+def visualHistory(confDir, accounts, log, args):
+    results = showHistory(confDir, accounts, log, args)
+    fig, ax = plt.subplots()
+    ax = results.plot(x='date', y='amount', kind='bar', ax=ax, title='History')
+    ax.set_xlabel('Transaction')
+    ax.set_ylabel('Absolute Dollars')
+    plt.show()
 
 # plot an account's value over time
 def plot(confDir, accounts, log, args):
@@ -341,5 +351,7 @@ cmds = dict({
     'listAccts': (listAccounts, 'List all known accounts.', 'listAccts'),
     'newAcct': (addAccount, 'Add a new account.', 'newAcct account'),
     'plot': (plot, 'Plot total value per day/month over time.', 'plot [units] [--start start_date] [--end end_date] [--acct account] [-invert] [-dots] [-noline] [-alldays] [-totals]'),
-    'reset': (reset, 'Resets the existing configuration.', 'reset')
+    'reset': (reset, 'Resets the existing configuration.', 'reset'),
+    'visualHistory': (visualHistory, 'Display the last X items as a plot, default is 5.', 'visualHistory [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),
+    'vhist': (visualHistory, 'Shorter form of the visualHistory command.', 'vhist [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]')
 })
