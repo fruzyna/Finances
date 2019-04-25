@@ -31,7 +31,7 @@ def setupLog(logFile):
 # A history/search tool
 def getLast(log, count, acct='', start='', end='', title='', location='', note='', transType=''):
     hLog = filter(log, acct=acct, start=start, end=end, title=title, location=location, note=note, transType=transType)
-    return hLog.tail(count).sort_values('date')
+    return hLog.sort_values('date').tail(count)
 
 # Filter the database
 def filter(log, acct='', start='', end='', title='', location='', note='', transType=''):
