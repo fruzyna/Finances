@@ -223,6 +223,34 @@ def visualHistory(confDir, accounts, log, args):
     ax.set_ylabel('Absolute Dollars')
     plt.show()
 
+# show unique values in a given column
+def unique(confDir, accounts, log, args):
+    if 1 in args:
+        column = args[1]
+        if column in log:
+            unique = log[column].unique()
+            unique.sort()
+            print(unique)
+        else:
+            print('Column not found please choose from:', ', '.join(log.columns))
+    else:
+        print('Requires 1 argument, the column name')
+
+# replace all matching values in column
+def replaceAll(confDir, accounts, log, args):
+    if 3 in args:
+        column = args[1]
+        old = '^' + args[2] + '$'
+        new = args[3]
+        if column in log:
+            log[column] = log[column].replace({old: new}, regex=True)
+            logFile = confDir + 'log.csv'
+            save(log, logFile)
+        else:
+            print('Column not found please choose from:', ', '.join(log.columns))
+    else:
+        print('Requires 3 arguments, the column name, find string, and replace string')
+
 # plot an account's value over time
 def plot(confDir, accounts, log, args):
     # get unit of time, default is days
@@ -351,7 +379,9 @@ cmds = dict({
     'listAccts': (listAccounts, 'List all known accounts.', 'listAccts'),
     'newAcct': (addAccount, 'Add a new account.', 'newAcct account'),
     'plot': (plot, 'Plot total value per day/month over time.', 'plot [units] [--start start_date] [--end end_date] [--acct account] [-invert] [-dots] [-noline] [-alldays] [-totals]'),
+    'replace': (replaceAll, 'Replace all matching strings in a given column.', 'replace [column] [find] [replace_with]'),
     'reset': (reset, 'Resets the existing configuration.', 'reset'),
+    'unique': (unique, 'Gets all unique values in a given column.', 'unique [column]'),
     'visualHistory': (visualHistory, 'Display the last X items as a plot, default is 5.', 'visualHistory [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),
     'vhist': (visualHistory, 'Shorter form of the visualHistory command.', 'vhist [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]')
 })
