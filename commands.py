@@ -25,48 +25,35 @@ def delete(confDir, accounts, log, args):
 
 # command to add a new transation
 def add(confDir, accounts, log, args):
-    if 1 in args:
-        if 3 in args:
-            # manual entry
-            if '@' in args[1]:
-                title, loc = args[1].split('@')
-                acct = args[2].upper()
-                src = '-'
-                cost = float(args[3])
-                
-                # get optional arguments
-                date = getOpArg(args, 'date', default=dt.today().strftime('%m-%d-%Y')).replace('/', '-')
-                note = getOpArg(args, 'note')
-            else:
-                print('First argument must be formated \"[title]@[location]\"')
-                return
+    if 3 in args:
+        # manual entry
+        if '@' in args[1]:
+            title, loc = args[1].split('@')
+            acct = args[2]
+            src = '-'
+            cost = args[3]
+            
+            # get optional arguments
+            date = getOpArg(args, 'date', default=dt.today().strftime(dateFormat))
+            note = getOpArg(args, 'note')
         else:
-            print('Requires arguments \"[title]@[location] [account] [amount]\"')
+            print('First argument must be formated "[title]@[location]"')
+            return
     else:
-        # guided entry
-        title = input('Title: ')
-        loc = input('Location: ')
-        cost = input('Value (negative if spent): ')
-        acct = input('Account (\'2\' between accounts if transfer): ')
-        print('The following requests are optional..')
-        date = input('Date (mm/dd/yyyy):')
-        note = input('Note: ')
+        print('Requires arguments "[title]@[location] [account] [amount]"')
 
     # process account
     if '2' in acct:
         src, acct = acct.split('2')
-    elif cost < 0:
+    elif cost[0] == '-':
         src = acct
         acct = '-'
-        cost = abs(cost)
+        cost = cost[1:]
 
     # add to log
-    if (src in accounts or src == '-') and (acct in accounts or acct == '-'):
-        log.loc[log.shape[0]] = [title, loc, date, src, acct, cost, note]
-        logFile = confDir + 'log.csv'
-        save(log, logFile)
-    else:
-        print('Invalid account provided!')
+    log.loc[log.shape[0]] = [correctFormat('title', title), correctFormat('location', loc), correctFormat('date', date), correctFormat('from', src, accounts=accounts), correctFormat('to', acct, accounts=accounts), correctFormat('amount', cost), correctFormat('note', note)]
+    logFile = confDir + 'log.csv'
+    save(log, logFile)
 
 # show last x transactions based on criteria
 def showHistory(confDir, accounts, log, args):
@@ -76,19 +63,14 @@ def showHistory(confDir, accounts, log, args):
         count = int(args[1])
 
     # optional arguments
-    acct = getOpArg(args, 'acct').upper()
-    end = getOpArg(args, 'end')
-    start = getOpArg(args, 'start')
-    title = getOpArg(args, 'title')
-    loc = getOpArg(args, 'loc')
-    note = getOpArg(args, 'note')
-    transType = getOpArg(args, 'transType')
-    count = int(getOpArg(args, 'count', default=count))
-
-    # confirm a proved account is real
-    if acct and acct not in accounts:
-        print('Invalid account provided')
-        return
+    acct        = correctFormat('account', getOpArg(args, 'acct'), accounts=accounts)
+    end         = correctFormat('date', getOpArg(args, 'end'))
+    start       = correctFormat('date', getOpArg(args, 'start'))
+    title       = correctFormat('title', getOpArg(args, 'title'))
+    loc         = correctFormat('location', getOpArg(args, 'loc'))
+    note        = correctFormat('note', getOpArg(args, 'note'))
+    transType   = getOpArg(args, 'transType')
+    count       = int(getOpArg(args, 'count', default=count))
 
     # get and print results
     results = getLast(log, count, acct, start=start, end=end, title=title, location=loc, note=note, transType=transType)
@@ -99,8 +81,7 @@ def showHistory(confDir, accounts, log, args):
 # list all accounts
 def listAccounts(confDir, accounts, log, args):
     print('Current accounts:')
-    for acct in accounts:
-        print(acct)
+    print('\n'.join(accounts))
 
 # add a new acount
 def addAccount(confDir, accounts, log, args):
@@ -109,12 +90,13 @@ def addAccount(confDir, accounts, log, args):
         newAcct = args[1]
     else:
         newAcct = input('New account: ')
+    newAcct = correctFormat('account', newAcct, new=True)
 
     # write to file
     accounts.append(newAcct)
     acctFile = confDir + 'accounts.csv'
     with open(acctFile, 'w+') as f:
-        f.write(','.join([acct.upper().replace(' ', '') for acct in accounts]))
+        f.write(','.join(accounts))
 
 # get basic info about an account
 def accountInfo(confDir, accounts, log, args):
@@ -122,15 +104,12 @@ def accountInfo(confDir, accounts, log, args):
     if 1 not in args:
         print('An account name is required')
         return
-    acct = args[1].upper()
-    if acct not in accounts:
-        print('Invalid account name,' + acct)
-        return
+    acct = correctFormat('account', args[1], accounts=accounts)
 
     # get optional arguments
-    starting = getOpArg(args, 'start')
-    ending = getOpArg(args, 'end')
-    reach = getOpArg(args, 'months', 6)
+    starting = correctFormat('date', getOpArg(args, 'start'))
+    ending   = correctFormat('date', getOpArg(args, 'end'))
+    reach    = getOpArg(args, 'months', 6)
 
     # request data
     results = totalsPerUnitTime(log, 'months', acct=acct, start=starting, end=ending)
@@ -199,13 +178,13 @@ def export(confDir, accounts, log, args):
             fileLoc += '.csv'
 
         # optional arguments
-        acct = getOpArg(args, 'acct').upper()
-        end = getOpArg(args, 'end').upper()
-        start = getOpArg(args, 'start').upper()
-        title = getOpArg(args, 'title')
-        loc = getOpArg(args, 'loc')
-        note = getOpArg(args, 'note')
-        transType = getOpArg(args, 'transType').lower()
+        acct        = correctFormat('account', getOpArg(args, 'acct'))
+        end         = correctFormat('date', getOpArg(args, 'end'))
+        start       = correctFormat('date', getOpArg(args, 'start'))
+        title       = correctFormat('title', getOpArg(args, 'title'))
+        loc         = correctFormat('location', getOpArg(args, 'loc'))
+        note        = correctFormat('note', getOpArg(args, 'note'))
+        transType   = getOpArg(args, 'transType').lower()
         
         # fetch items to export
         items = filter(log, acct=acct, start=start, end=end, title=title, location=loc, note=note, transType=transType)
@@ -240,9 +219,9 @@ def unique(confDir, accounts, log, args):
 def replaceAll(confDir, accounts, log, args):
     if 3 in args:
         column = args[1]
-        old = '^' + args[2] + '$'
-        new = args[3]
         if column in log:
+            old = '^' + correctFormat(column, args[2], accounts=accounts) + '$'
+            new = correctFormat(column, args[3], accounts=accounts)
             log[column] = log[column].replace({old: new}, regex=True)
             logFile = confDir + 'log.csv'
             save(log, logFile)
@@ -250,6 +229,24 @@ def replaceAll(confDir, accounts, log, args):
             print('Column not found please choose from:', ', '.join(log.columns))
     else:
         print('Requires 3 arguments, the column name, find string, and replace string')
+
+# command to edit a value in a column
+def edit(confDir, accounts, log, args):
+    if 2 in args:
+        i = int(args[1])
+        column = args[2]
+        if column in log:
+            if 3 in args:
+                new = args[3]
+            else:
+                new = input('New value for ' + str(i) + ', ' + column + ' (' + log.loc[i, column] + '): ')
+            log.loc[i, column] = correctFormat(column, new, accounts=accounts)
+            logFile = confDir + 'log.csv'
+            save(log, logFile)
+        else:
+            print('Column not found please choose from:', ', '.join(log.columns))
+    else:
+        print('Please provide a row number and column name')
 
 # plot an account's value over time
 def plot(confDir, accounts, log, args):
@@ -260,14 +257,14 @@ def plot(confDir, accounts, log, args):
     units = units.lower()
 
     # get optional arguments
-    acct = getOpArg(args, 'acct').upper()
-    start = getOpArg(args, 'start').upper()
-    end = getOpArg(args, 'end').upper()
-    invert = getOpArg(args, 'invert', default=False)
-    points = getOpArg(args, 'dots', default=False)
-    noLine = getOpArg(args, 'noline', default=False)
-    allPoints = getOpArg(args, 'alldays', default=False)
-    totals = getOpArg(args, 'totals', default=False)
+    acct        = correctFormat('account', getOpArg(args, 'acct'), accounts=accounts)
+    start       = correctFormat('date', getOpArg(args, 'start'))
+    end         = correctFormat('date', getOpArg(args, 'end'))
+    invert      = getOpArg(args, 'invert', default=False)
+    points      = getOpArg(args, 'dots', default=False)
+    noLine      = getOpArg(args, 'noline', default=False)
+    allPoints   = getOpArg(args, 'alldays', default=False)
+    totals      = getOpArg(args, 'totals', default=False)
 
     # request data
     results = totalsPerUnitTime(log, units, acct=acct, start=start, end=end)
@@ -296,7 +293,7 @@ def plot(confDir, accounts, log, args):
     
     # fill empty points
     if allPoints and units.startswith('day'):
-        sums.index = pd.to_datetime(sums.index, format='%Y/%m/%d')
+        sums.index = pd.to_datetime(sums.index, format=dateFormat)
         sums = sums.resample('D').fillna(method='ffill')
     elif allPoints:
         print('-alldays can only be used with the units as days')
@@ -372,6 +369,7 @@ cmds = dict({
     'bal': (balance, 'Shorter form of the balance command.', 'bal'),
     'delete': (delete, 'Remove an entry from the log.', 'delete entry_index'),
     'del': (delete, 'Shorter form of the delete command.', 'del entry_index'),
+    'edit': (edit, 'Edit a given value in an entry.', 'edit entry_index column'),
     'export': (export, 'Export entries to a new file.', 'export log_file'),
     'help': (helpCmd, 'List and describe all command options.', 'help [command]'),
     'history': (showHistory, 'Display the last X items, default is 5.', 'history [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),
@@ -379,9 +377,9 @@ cmds = dict({
     'listAccts': (listAccounts, 'List all known accounts.', 'listAccts'),
     'newAcct': (addAccount, 'Add a new account.', 'newAcct account'),
     'plot': (plot, 'Plot total value per day/month over time.', 'plot [units] [--start start_date] [--end end_date] [--acct account] [-invert] [-dots] [-noline] [-alldays] [-totals]'),
-    'replace': (replaceAll, 'Replace all matching strings in a given column.', 'replace [column] [find] [replace_with]'),
+    'replace': (replaceAll, 'Replace all matching strings in a given column.', 'replace column find replace_with'),
     'reset': (reset, 'Resets the existing configuration.', 'reset'),
-    'unique': (unique, 'Gets all unique values in a given column.', 'unique [column]'),
+    'unique': (unique, 'Gets all unique values in a given column.', 'unique column'),
     'visualHistory': (visualHistory, 'Display the last X items as a plot, default is 5.', 'visualHistory [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),
     'vhist': (visualHistory, 'Shorter form of the visualHistory command.', 'vhist [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]')
 })

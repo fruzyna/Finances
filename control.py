@@ -8,6 +8,8 @@ from decimal import *
 # Helper Functions
 #
 
+dateFormat = '%Y-%m-%d'
+
 # Prompt for creating list of accounts
 def setupAccts(acctFile):
     accounts = []
@@ -39,9 +41,9 @@ def filter(log, acct='', start='', end='', title='', location='', note='', trans
     if acct != '':
         hLog = hLog[(hLog['from'] == acct) | (hLog['to'] == acct)]
     if start != '':
-        hLog = hLog[hLog['date'] >= dt.strptime(start, '%m/%d/%Y')]
+        hLog = hLog[hLog['date'] >= dt.strptime(start, dateFormat)]
     if end != '':
-        hLog = hLog[hLog['date'] < dt.strptime(end, '%m/%d/%Y')]
+        hLog = hLog[hLog['date'] < dt.strptime(end, dateFormat)]
     if title != '':
         hLog = hLog[hLog['title'].str.contains(title)]
     if location != '':
@@ -69,9 +71,9 @@ def getAccountInfo(log, account, start='', end=''):
 
     # filter by date (optional)
     if start != '':
-        cLog = cLog[cLog['date'] >= dt.strptime(start, '%m/%d/%Y')]
+        cLog = cLog[cLog['date'] >= dt.strptime(start, dateFormat)]
     if end != '':
-        cLog = cLog[cLog['date'] < dt.strptime(end, '%m/%d/%Y')]
+        cLog = cLog[cLog['date'] < dt.strptime(end, dateFormat)]
 
     # get all items
     tos = cLog[cLog['to'] == account]
@@ -190,6 +192,47 @@ def valueToString(value):
         cIndex = pIndex - (i + 1) * 3 - i
         valStr = valStr[:cIndex] + ',' + valStr[cIndex:]
     return valStr
+    
+# checks that a cell is formatted correctly
+def correctFormat(column, value, new=False, accounts=[]):
+    if value == '':
+        return value
+    elif column == 'title' or column == 'location':
+        # title and location must be letters, numbers, hyphens, and apostrophes
+        for c in value:
+            if not c.isalpha() and not c.isdigit() and c != ' ' and c != '-' and c != '\'':
+                raise Exception('{} must consist only of letters, numbers, spaces, hyphens, and apostrophes. {} found.'.format(column, c))
+        return value
+    elif column == 'date':
+        # date must be in format YYYY-MM-DD
+        value = value.replace('/', '-')
+        try:
+            dt.strptime(value, dateFormat)
+        except ValueError:
+            raise Exception('Date must be formatted as YYYY-MM-DD.')
+        return value
+    elif column == 'from' or column == 'to' or column == 'account':
+        # to and from must be a valid account and upper case
+        value = value.upper()
+        if value != '-':
+            if not new and not value in accounts:
+                raise Exception('Account, {}, does not exist in {}.'.format(value, accounts))
+            for c in value:
+                if not c.isalpha():
+                    raise Exception('Account name must consist only of letters. {} found.'.format(c))
+        return value
+    elif column == 'amount':
+        # amount must be a positive 2 decimal place number
+        if type(value) != 'float':
+            value = float(value)
+        if value < 0:
+            raise Exception('Value name must not be less than zero. {} provided.'.format(value))
+        return value
+    elif column == 'note':
+        # note must be a string
+        return value
+    else:
+        return value
 
 # save a df to a file
 def save(log, file):
