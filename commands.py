@@ -295,6 +295,7 @@ def plot(confDir, accounts, categories, log, args):
 
     # get optional arguments
     acct        = correctFormat('account', getOpArg(args, 'acct'), accounts=accounts)
+    cat         = correctFormat('category', getOpArg(args, 'cat'), categories=categories)
     start       = correctFormat('date', getOpArg(args, 'start'))
     end         = correctFormat('date', getOpArg(args, 'end'))
     invert      = getOpArg(args, 'invert', default=False)
@@ -304,7 +305,7 @@ def plot(confDir, accounts, categories, log, args):
     totals      = getOpArg(args, 'totals', default=False)
 
     # request data
-    results = totalsPerUnitTime(log, units, acct=acct, start=start, end=end)
+    results = totalsPerUnitTime(log, units, categories, acct=acct, start=start, end=end, category=cat)
 
     # give up if request failed
     if results.empty:

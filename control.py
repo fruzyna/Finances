@@ -100,9 +100,9 @@ def getAccountInfo(log, account, start='', end=''):
 months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 # Gets the total for an account per day/month
-def totalsPerUnitTime(log, units, acct='', start='', end=''):
+def totalsPerUnitTime(log, units, categories, acct='', start='', end='', category=''):
     # get appropriate data and split into to and from
-    logs = filter(log, acct=acct, start=start, end=end)
+    logs = filter(log, categories, acct=acct, start=start, end=end, category=category)
     if acct:
         toAcct = logs[logs['to'] == acct]
         fromAcct = logs[logs['from'] == acct]
