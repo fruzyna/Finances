@@ -25,18 +25,23 @@ def setupAccts(acctFile):
         f.write(','.join([acct.upper().replace(' ', '') for acct in accounts]))
 
 # Initiates log file
+def setupCats(catFile):
+    with open(catFile, 'w+') as f:
+        f.write('')
+
+# Initiates log file
 def setupLog(logFile):
     with open(logFile, 'w+') as f:
         f.write('index,title,location,date,from,to,amount,note')
 
 # TODO account for new unprocessed dates in date column
 # A history/search tool
-def getLast(log, count, acct='', start='', end='', title='', location='', note='', transType=''):
-    hLog = filter(log, acct=acct, start=start, end=end, title=title, location=location, note=note, transType=transType)
+def getLast(log, count, categories, acct='', start='', end='', title='', location='', note='', transType='', category=''):
+    hLog = filter(log, categories, acct=acct, start=start, end=end, title=title, location=location, note=note, transType=transType, category=category)
     return hLog.sort_values('date').tail(count)
 
 # Filter the database
-def filter(log, acct='', start='', end='', title='', location='', note='', transType=''):
+def filter(log, categories, acct='', start='', end='', title='', location='', note='', transType='', category=''):
     hLog = log
     if acct != '':
         hLog = hLog[(hLog['from'] == acct) | (hLog['to'] == acct)]
@@ -50,6 +55,8 @@ def filter(log, acct='', start='', end='', title='', location='', note='', trans
         hLog = hLog[hLog['location'].str.contains(location)]
     if note != '':
         hLog = hLog[hLog['note'].str.contains(note)]
+    if category != '':
+        hLog = hLog[hLog.apply(lambda row: determineCategory(row, categories), axis=1) == category]
     if transType == 'to':
         hLog = hLog[(hLog['from'] == '-') & (hLog['to'] != '-')]
     elif transType == 'from':
@@ -194,7 +201,8 @@ def valueToString(value):
     return valStr
     
 # checks that a cell is formatted correctly
-def correctFormat(column, value, new=False, accounts=[]):
+def correctFormat(column, value, new=False, accounts=[], categories={}):
+    value = value.strip()
     if value == '':
         return value
     elif column == 'title' or column == 'location':
@@ -221,6 +229,16 @@ def correctFormat(column, value, new=False, accounts=[]):
                 if not c.isalpha():
                     raise Exception('Account name must consist only of letters. {} found.'.format(c))
         return value
+    elif column == 'category':
+        # to and from must be a valid category and upper case
+        value = value.upper()
+        if value != '-':
+            if not new and not value in categories:
+                raise Exception('Category, {}, does not exist in {}.'.format(value, categories))
+            for c in value:
+                if not c.isalpha():
+                    raise Exception('Category name must consist only of letters. {} found.'.format(c))
+        return value
     elif column == 'amount':
         # amount must be a positive 2 decimal place number
         if type(value) != 'float':
@@ -233,6 +251,22 @@ def correctFormat(column, value, new=False, accounts=[]):
         return value
     else:
         return value
+
+# determines category of entry
+def determineCategory(row, categories):
+    for catName in categories:
+        category = categories[catName]
+        titles = category[0]
+        locations = category[1]
+        accounts = category[2]
+        if not row['title'] in titles and len(titles) > 0:
+            continue
+        if not row['location'] in locations and len(locations) > 0:
+            continue
+        if not row['to'] in accounts and not row['from'] in accounts and len(accounts) > 0:
+            continue
+        return catName
+    return 'OTHER'
 
 # save a df to a file
 def save(log, file):

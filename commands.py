@@ -11,7 +11,7 @@ from control import *
 #
 
 # command to delete a row
-def delete(confDir, accounts, log, args):
+def delete(confDir, accounts, categories, log, args):
     if 1 in args:
         i = int(args[1])
         answer = input(' '.join(['Would you like to remove?', log.loc[i, 'title'], log.loc[i, 'location'], log.loc[i, 'to'], log.loc[i, 'from'], str(log.loc[i, 'amount']), '[y/N] ']))
@@ -24,7 +24,7 @@ def delete(confDir, accounts, log, args):
         print('Please provide a row number')
 
 # command to add a new transation
-def add(confDir, accounts, log, args):
+def add(confDir, accounts, categories, log, args):
     if 3 in args:
         # manual entry
         if '@' in args[1]:
@@ -56,7 +56,7 @@ def add(confDir, accounts, log, args):
     save(log, logFile)
 
 # show last x transactions based on criteria
-def showHistory(confDir, accounts, log, args):
+def showHistory(confDir, accounts, categories, log, args):
     # limit of transactions
     count = 5
     if 1 in args:
@@ -69,22 +69,28 @@ def showHistory(confDir, accounts, log, args):
     title       = correctFormat('title', getOpArg(args, 'title'))
     loc         = correctFormat('location', getOpArg(args, 'loc'))
     note        = correctFormat('note', getOpArg(args, 'note'))
+    category    = correctFormat('category', getOpArg(args, 'cat'), categories=categories)
     transType   = getOpArg(args, 'transType')
     count       = int(getOpArg(args, 'count', default=count))
 
     # get and print results
-    results = getLast(log, count, acct, start=start, end=end, title=title, location=loc, note=note, transType=transType)
+    results = getLast(log, count, categories, acct=acct, start=start, end=end, title=title, location=loc, note=note, transType=transType, category=category)
     print(results)
     print('Total:', valueToString(results['amount'].sum()))
     return results
 
 # list all accounts
-def listAccounts(confDir, accounts, log, args):
+def listAccounts(confDir, accounts, categories, log, args):
     print('Current accounts:')
     print('\n'.join(accounts))
 
+# list all accounts
+def listCategories(confDir, accounts, categories, log, args):
+    print('Current categories:')
+    print('\n'.join(categories))
+
 # add a new acount
-def addAccount(confDir, accounts, log, args):
+def addAccount(confDir, accounts, categories, log, args):
     # prompt if name is not provided
     if 1 in args:
         newAcct = args[1]
@@ -98,8 +104,39 @@ def addAccount(confDir, accounts, log, args):
     with open(acctFile, 'w+') as f:
         f.write(','.join(accounts))
 
+# add a new category
+def addCategory(confDir, accounts, categories, log, args):
+    # prompt if name is not provided
+    if 1 in args:
+        name    = args[1]
+        titles  = getOpArg(args, 'title')
+        locs    = getOpArg(args, 'loc')
+        accts   = getOpArg(args, 'acct')
+    else:
+        name    = input('New category: ')
+        print('Separate lists of options by commas')
+        titles  = input('Accepted Titles: ')
+        locs    = input('Accepted Locations: ')
+        accts   = input('Accepted Accounts: ')
+
+    name    = correctFormat('category', name, new=True)
+    titles  = [correctFormat('title', title) for title in titles.split(',')]
+    locs    = [correctFormat('location', loc) for loc in locs.split(',')]
+    accts   = [correctFormat('account', acct, accounts=accounts) for acct in accts.split(',')]
+
+    # write to file
+    categories[name] = [titles, locs, accts]
+    catFile = confDir + 'categories.csv'
+    with open(catFile, 'w+') as f:
+        for catName in categories:
+            cat = categories[catName]
+            titles  = cat[0]
+            locs    = cat[1]
+            accts   = cat[2]
+            f.write(catName + ',' + ':'.join(titles) + ',' + ':'.join(locs) + ',' + ':'.join(accts) + '\n')
+
 # get basic info about an account
-def accountInfo(confDir, accounts, log, args):
+def accountInfo(confDir, accounts, categories, log, args):
     # check account name
     if 1 not in args:
         print('An account name is required')
@@ -131,7 +168,7 @@ def accountInfo(confDir, accounts, log, args):
     print('\n\u001b[1mNet Total:', valueToString(delta))
 
 # get balances of all accounts and total
-def balance(confDir, accounts, log, args):
+def balance(confDir, accounts, categories, log, args):
     total = 0
     longestName = 0
     longestCost = 0
@@ -171,7 +208,7 @@ def balance(confDir, accounts, log, args):
         print(name, ':', ' '*spaces, delta, sep='')
 
 # exports data to a csv file
-def export(confDir, accounts, log, args):
+def export(confDir, accounts, categories, log, args):
     if 1 in args:
         fileLoc = os.path.expanduser(args[1])
         if not fileLoc.endswith('.csv'):
@@ -187,15 +224,15 @@ def export(confDir, accounts, log, args):
         transType   = getOpArg(args, 'transType').lower()
         
         # fetch items to export
-        items = filter(log, acct=acct, start=start, end=end, title=title, location=loc, note=note, transType=transType)
+        items = filter(log, categories, acct=acct, start=start, end=end, title=title, location=loc, note=note, transType=transType)
         save(items, fileLoc)
         print('Exported', len(items.index), 'items to', fileLoc)
     else:
         print('Requires at least 1 argument, the file location')
 
 # plot historical values
-def visualHistory(confDir, accounts, log, args):
-    results = showHistory(confDir, accounts, log, args)
+def visualHistory(confDir, accounts, categories, log, args):
+    results = showHistory(confDir, accounts, categories, log, args)
     fig, ax = plt.subplots()
     ax = results.plot(x='date', y='amount', kind='bar', ax=ax, title='History')
     ax.set_xlabel('Transaction')
@@ -203,7 +240,7 @@ def visualHistory(confDir, accounts, log, args):
     plt.show()
 
 # show unique values in a given column
-def unique(confDir, accounts, log, args):
+def unique(confDir, accounts, categories, log, args):
     if 1 in args:
         column = args[1]
         if column in log:
@@ -216,7 +253,7 @@ def unique(confDir, accounts, log, args):
         print('Requires 1 argument, the column name')
 
 # replace all matching values in column
-def replaceAll(confDir, accounts, log, args):
+def replaceAll(confDir, accounts, categories, log, args):
     if 3 in args:
         column = args[1]
         if column in log:
@@ -231,7 +268,7 @@ def replaceAll(confDir, accounts, log, args):
         print('Requires 3 arguments, the column name, find string, and replace string')
 
 # command to edit a value in a column
-def edit(confDir, accounts, log, args):
+def edit(confDir, accounts, categories, log, args):
     if 2 in args:
         i = int(args[1])
         column = args[2]
@@ -249,7 +286,7 @@ def edit(confDir, accounts, log, args):
         print('Please provide a row number and column name')
 
 # plot an account's value over time
-def plot(confDir, accounts, log, args):
+def plot(confDir, accounts, categories, log, args):
     # get unit of time, default is days
     units = 'days'
     if 1 in args:
@@ -328,7 +365,7 @@ def plot(confDir, accounts, log, args):
     plt.show()
 
 # reset the configuration
-def reset(confDir, accounts, log, args):
+def reset(confDir, accounts, categories, log, args):
     confirm = input('Are you sure you want to delete everything? [y/N] ')
     if confirm.lower() == 'y':
         confDir = confDir[:-1]
@@ -339,7 +376,7 @@ def reset(confDir, accounts, log, args):
         print('Reset complete')
 
 # give help output
-def helpCmd(confDir, accounts, log, args):
+def helpCmd(confDir, accounts, categories, log, args):
     if 1 in args:
         # print description of given command
         cmd = args[1]
@@ -358,7 +395,7 @@ def helpCmd(confDir, accounts, log, args):
             print(key, '-', cmds[key][1])
 
 # warn a command is unknown
-def unknown(confDir, accounts, log, args):
+def unknown(confDir, accounts, categories, log, args):
     print('Invalid command,', args['cmd'])
 
 # dictionary of commands  
@@ -375,7 +412,9 @@ cmds = dict({
     'history': (showHistory, 'Display the last X items, default is 5.', 'history [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),
     'hist': (showHistory, 'Shorter form of the history command.', 'hist [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),
     'listAccts': (listAccounts, 'List all known accounts.', 'listAccts'),
-    'newAcct': (addAccount, 'Add a new account.', 'newAcct account'),
+    'listCats': (listCategories, 'List all known categories.', 'listCats'),
+    'newAcct': (addAccount, 'Add a new account.', 'newAcct account_name'),
+    'newCat': (addCategory, 'Add a new category.', 'newCat category_name'),
     'plot': (plot, 'Plot total value per day/month over time.', 'plot [units] [--start start_date] [--end end_date] [--acct account] [-invert] [-dots] [-noline] [-alldays] [-totals]'),
     'replace': (replaceAll, 'Replace all matching strings in a given column.', 'replace column find replace_with'),
     'reset': (reset, 'Resets the existing configuration.', 'reset'),

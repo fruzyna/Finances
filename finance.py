@@ -47,6 +47,7 @@ if confDir[-1] != '/':
     confDir += '/'
 
 acctFile = confDir + 'accounts.csv'
+catFile = confDir + 'categories.csv'
 logFile = confDir + 'log.csv'
 
 # create config file if they don't exist
@@ -63,6 +64,9 @@ if not os.path.exists(confDir):
 if not os.path.exists(acctFile):
     setupAccts(acctFile)
 
+if not os.path.exists(catFile):
+    setupCats(catFile)
+
 if not os.path.exists(logFile):
     setupLog(logFile)
 
@@ -70,6 +74,25 @@ if not os.path.exists(logFile):
 with open(acctFile, 'r') as f:
     acctStr = f.read()
     accounts = acctStr.split(',')
+
+categories = {}
+with open(catFile, 'r') as f:
+    catLines = f.read().split('\n')
+    for line in catLines:
+        parts = line.split(',')
+        if len(parts) == 4:
+            name = parts[0]
+            titles = parts[1].split(':')
+            if len(titles) == 1 and titles[0] == '':
+                titles = []
+            locs = parts[2].split(':')
+            if len(locs) == 1 and locs[0] == '':
+                locs = []
+            accts = parts[3].split(':')
+            if len(accts) == 1 and accts[0] == '':
+                accts = []
+            categories[name] = [titles, locs, accts]
+
 log = pd.read_csv(logFile, sep=',', header=0, parse_dates=['date'])[['title', 'location', 'date', 'from', 'to', 'amount', 'note']]
 
 # get command
@@ -80,6 +103,6 @@ if 'cmd' in argDict:
 # execute command
 if mode in cmds:
     fn = cmds[mode][0]
-    fn(confDir, accounts, log, argDict)
+    fn(confDir, accounts, categories, log, argDict)
 else:
-    unknown(confDir, accounts, log, argDict)
+    unknown(confDir, accounts, categories, log, argDict)
