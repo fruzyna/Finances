@@ -173,9 +173,10 @@ def getMonthProgress(log, catName, categories, month, year):
     monthFrom = month[month['to'] == '-']
     spent = -(monthTo['amount'].sum() - monthFrom['amount'].sum())
     goal = categories[catName][0]
+    progress = 0
     if goal != '':
         goal = correctFormat('amount', goal)
-        progress = str(round(100 * (spent / goal), 2))
+        progress = round(100 * (spent / goal), 2)
     else:
         goal = 0
     return month, first, last, spent, goal, progress

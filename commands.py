@@ -1,7 +1,9 @@
 import os, shutil
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime as dt
+from datetime import timedelta
 from tabulate import tabulate
 
 from control import *
@@ -97,9 +99,78 @@ def goalProgress(confDir, accounts, categories, log, args):
         print(catName, 'from', first, 'to', last)
         print(month)
         if goal > 0:
-            print(tabulate([['Spent', valueToString(spent)], ['Goal', valueToString(goal)], ['Progress', progress + '%']]))
+            print(tabulate([['Spent', valueToString(spent)], ['Goal', valueToString(goal)], ['Progress', str(progress) + '%']]))
         else:
             print('Spent:', valueToString(spent))
+    else:
+        print('Requires at least 1 argument, the name of the category.')
+
+# display the progress of a category goal in the current month
+def monthlyGoal(confDir, accounts, categories, log, args):
+    if 1 in args:
+        # get parameters
+        catName = correctFormat('category', args[1], categories=categories)
+        plot = getOpArg(args, 'plot', default=False)
+        months = 6
+        if 2 in args:
+            months = int(args[2])
+
+        today = dt.today()
+        m = today.month
+        y = today.year
+        dates = []
+        spents = []
+        goals = []
+        progresses = []
+        percents = []
+
+        # get each months progress
+        for i in range(months):
+            _, first, _, spent, goal, progress = getMonthProgress(log, catName, categories, m, y)
+
+            # advance to previous month
+            if m == 1:
+                m = 12
+                y -= 1
+            else:
+                m -= 1
+
+            # add values to lists
+            dates.append(first)
+            spents.append(valueToString(spent))
+            if goal > 0:
+                goals.append(valueToString(goal))
+                progresses.append(str(progress) + '%')
+                percents.append(progress)
+
+        # reverse lists
+        dates.reverse()
+        spents.reverse()
+        goals.reverse()
+        progresses.reverse()
+        percents.reverse()
+
+        # add labels and make table
+        dates = ['Date'] + dates
+        spents = ['Spent'] + spents
+        goals = ['Goal'] + goals
+        progresses = ['Progress'] + progresses
+        print(tabulate([dates, spents, goals, progresses]))
+
+        if plot:
+            # determine what is above and below goal
+            above = np.maximum(np.array(percents) - 100, 0)
+            below = np.minimum(np.array(percents), 100)
+
+            # plot percentages
+            fig, ax = plt.subplots() 
+            ax.bar(dates[1:], below, 0.35, color='g')
+            ax.bar(dates[1:], above, 0.35, color='r', bottom=100)
+            ax.plot(dates[1:], [100] * months, 'k--')
+            ax.set_title(catName + ' Goal Progress over Last ' + str(months) + ' Months')
+            ax.set_xlabel('Month')
+            ax.set_ylabel('Percent of Goal')
+            plt.show()
     else:
         print('Requires at least 1 argument, the name of the category.')
 
@@ -446,6 +517,7 @@ cmds = dict({
     'newCat': (addCategory, 'Add a new category.', 'newCat category_name'),
     'plot': (plot, 'Plot total value per day/month over time.', 'plot [units] [--start start_date] [--end end_date] [--acct account] [-invert] [-dots] [-noline] [-alldays] [-totals]'),
     'progress': (goalProgress, 'Display current monthly progress of a category goal.', 'progress category_name [month_num] [year_num]'),
+    'progressMonths': (monthlyGoal, 'Display goal results over the last few months.', 'progressMonths category_name number of months'),
     'replace': (replaceAll, 'Replace all matching strings in a given column.', 'replace column find replace_with'),
     'reset': (reset, 'Resets the existing configuration.', 'reset'),
     'unique': (unique, 'Gets all unique values in a given column.', 'unique column'),
