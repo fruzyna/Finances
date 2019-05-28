@@ -79,6 +79,30 @@ def showHistory(confDir, accounts, categories, log, args):
     print('Total:', valueToString(results['amount'].sum()))
     return results
 
+# display the progress of a category goal in the current month
+def goalProgress(confDir, accounts, categories, log, args):
+    if 1 in args:
+        # get category and mont
+        catName = correctFormat('category', args[1], categories=categories)
+        today = dt.today()
+        if 2 in args:
+            today = today.replace(month=int(args[2]))
+        if 3 in args:
+            today = today.replace(year=int(args[3]))
+
+        # fetch progress for month
+        month, first, last, spent, goal, progress = getMonthProgress(log, catName, categories, today.month, today.year)
+
+        # print results
+        print(catName, 'from', first, 'to', last)
+        print(month)
+        if goal > 0:
+            print(tabulate([['Spent', valueToString(spent)], ['Goal', valueToString(goal)], ['Progress', progress + '%']]))
+        else:
+            print('Spent:', valueToString(spent))
+    else:
+        print('Requires at least 1 argument, the name of the category.')
+
 # list all accounts
 def listAccounts(confDir, accounts, categories, log, args):
     print('Current accounts:')
@@ -109,31 +133,35 @@ def addCategory(confDir, accounts, categories, log, args):
     # prompt if name is not provided
     if 1 in args:
         name    = args[1]
+        goal    = getOpArg(args, 'goal')
         titles  = getOpArg(args, 'title')
         locs    = getOpArg(args, 'loc')
         accts   = getOpArg(args, 'acct')
     else:
         name    = input('New category: ')
+        goal    = input('Monthly Goal: ')
         print('Separate lists of options by commas')
         titles  = input('Accepted Titles: ')
         locs    = input('Accepted Locations: ')
         accts   = input('Accepted Accounts: ')
 
     name    = correctFormat('category', name, new=True)
+    goal    = correctFormat('amount', goal)
     titles  = [correctFormat('title', title) for title in titles.split(',')]
     locs    = [correctFormat('location', loc) for loc in locs.split(',')]
     accts   = [correctFormat('account', acct, accounts=accounts) for acct in accts.split(',')]
 
     # write to file
-    categories[name] = [titles, locs, accts]
+    categories[name] = [goal, titles, locs, accts]
     catFile = confDir + 'categories.csv'
     with open(catFile, 'w+') as f:
         for catName in categories:
             cat = categories[catName]
-            titles  = cat[0]
-            locs    = cat[1]
-            accts   = cat[2]
-            f.write(catName + ',' + ':'.join(titles) + ',' + ':'.join(locs) + ',' + ':'.join(accts) + '\n')
+            goal    = cat[0]
+            titles  = cat[1]
+            locs    = cat[2]
+            accts   = cat[3]
+            f.write(catName + ',' + goal + ',' + ':'.join(titles) + ',' + ':'.join(locs) + ',' + ':'.join(accts) + '\n')
 
 # get basic info about an account
 def accountInfo(confDir, accounts, categories, log, args):
@@ -411,15 +439,16 @@ cmds = dict({
     'export': (export, 'Export entries to a new file.', 'export log_file'),
     'help': (helpCmd, 'List and describe all command options.', 'help [command]'),
     'history': (showHistory, 'Display the last X items, default is 5.', 'history [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),
-    'hist': (showHistory, 'Shorter form of the history command.', 'hist [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),
+    'hist': (showHistory, 'Shorter form of the history command.', 'hist [count] [--start start_date] [--end end_date] [--acct account] [--cat category] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),
     'listAccts': (listAccounts, 'List all known accounts.', 'listAccts'),
     'listCats': (listCategories, 'List all known categories.', 'listCats'),
     'newAcct': (addAccount, 'Add a new account.', 'newAcct account_name'),
     'newCat': (addCategory, 'Add a new category.', 'newCat category_name'),
     'plot': (plot, 'Plot total value per day/month over time.', 'plot [units] [--start start_date] [--end end_date] [--acct account] [-invert] [-dots] [-noline] [-alldays] [-totals]'),
+    'progress': (goalProgress, 'Display current monthly progress of a category goal.', 'progress category_name [month_num] [year_num]'),
     'replace': (replaceAll, 'Replace all matching strings in a given column.', 'replace column find replace_with'),
     'reset': (reset, 'Resets the existing configuration.', 'reset'),
     'unique': (unique, 'Gets all unique values in a given column.', 'unique column'),
-    'visualHistory': (visualHistory, 'Display the last X items as a plot, default is 5.', 'visualHistory [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),
+    'visualHistory': (visualHistory, 'Display the last X items as a plot, default is 5.', 'visualHistory [count] [--start start_date] [--end end_date] [--cat category] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),
     'vhist': (visualHistory, 'Shorter form of the visualHistory command.', 'vhist [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]')
 })

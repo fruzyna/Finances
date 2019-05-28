@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 from datetime import datetime as dt
+from calendar import monthrange
 from decimal import *
 
 #
@@ -36,12 +37,12 @@ def setupLog(logFile):
 
 # TODO account for new unprocessed dates in date column
 # A history/search tool
-def getLast(log, count, categories, acct='', start='', end='', title='', location='', note='', transType='', category=''):
+def getLast(log, count, categories={}, acct='', start='', end='', title='', location='', note='', transType='', category=''):
     hLog = filter(log, categories, acct=acct, start=start, end=end, title=title, location=location, note=note, transType=transType, category=category)
     return hLog.sort_values('date').tail(count)
 
 # Filter the database
-def filter(log, categories, acct='', start='', end='', title='', location='', note='', transType='', category=''):
+def filter(log, categories={}, acct='', start='', end='', title='', location='', note='', transType='', category=''):
     hLog = log
     if acct != '':
         hLog = hLog[(hLog['from'] == acct) | (hLog['to'] == acct)]
@@ -163,6 +164,22 @@ def totalsPerUnitTime(log, units, categories, acct='', start='', end='', categor
     
     return results
 
+# get the progress of a category goal for a month
+def getMonthProgress(log, catName, categories, month, year):
+    first = dt(year, month, 1).strftime(dateFormat)
+    last = dt(year, month, monthrange(year, month)[1]).strftime(dateFormat)
+    month = filter(log, start=first, end=last, categories=categories, category=catName)
+    monthTo = month[month['from'] == '-']
+    monthFrom = month[month['to'] == '-']
+    spent = -(monthTo['amount'].sum() - monthFrom['amount'].sum())
+    goal = categories[catName][0]
+    if goal != '':
+        goal = correctFormat('amount', goal)
+        progress = str(round(100 * (spent / goal), 2))
+    else:
+        goal = 0
+    return month, first, last, spent, goal, progress
+
 # Gets the total for an account at a date
 def totalAt(log, date, acct=''):
     # get appropriate data and split into to and from
@@ -256,9 +273,9 @@ def correctFormat(column, value, new=False, accounts=[], categories={}):
 def determineCategory(row, categories):
     for catName in categories:
         category = categories[catName]
-        titles = category[0]
-        locations = category[1]
-        accounts = category[2]
+        titles = category[1]
+        locations = category[2]
+        accounts = category[3]
         if not row['title'] in titles and len(titles) > 0:
             continue
         if not row['location'] in locations and len(locations) > 0:

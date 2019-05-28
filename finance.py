@@ -80,18 +80,19 @@ with open(catFile, 'r') as f:
     catLines = f.read().split('\n')
     for line in catLines:
         parts = line.split(',')
-        if len(parts) == 4:
+        if len(parts) == 5:
             name = parts[0]
-            titles = parts[1].split(':')
+            goal = parts[1]
+            titles = parts[2].split(':')
             if len(titles) == 1 and titles[0] == '':
                 titles = []
-            locs = parts[2].split(':')
+            locs = parts[3].split(':')
             if len(locs) == 1 and locs[0] == '':
                 locs = []
-            accts = parts[3].split(':')
+            accts = parts[4].split(':')
             if len(accts) == 1 and accts[0] == '':
                 accts = []
-            categories[name] = [titles, locs, accts]
+            categories[name] = [goal, titles, locs, accts]
 
 log = pd.read_csv(logFile, sep=',', header=0, parse_dates=['date'])[['title', 'location', 'date', 'from', 'to', 'amount', 'note']]
 
