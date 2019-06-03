@@ -517,7 +517,7 @@ cmds = dict({
     'newCat': (addCategory, 'Add a new category.', 'newCat category_name'),
     'plot': (plot, 'Plot total value per day/month over time.', 'plot [units] [--start start_date] [--end end_date] [--acct account] [-invert] [-dots] [-noline] [-alldays] [-totals]'),
     'progress': (goalProgress, 'Display current monthly progress of a category goal.', 'progress category_name [month_num] [year_num]'),
-    'progressMonths': (monthlyGoal, 'Display goal results over the last few months.', 'progressMonths category_name number of months'),
+    'progressMonths': (monthlyGoal, 'Display goal results over the last few months.', 'progressMonths category_name [num_months] [-plot]'),
     'replace': (replaceAll, 'Replace all matching strings in a given column.', 'replace column find replace_with'),
     'reset': (reset, 'Resets the existing configuration.', 'reset'),
     'unique': (unique, 'Gets all unique values in a given column.', 'unique column'),

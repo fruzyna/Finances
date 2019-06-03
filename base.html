@@ -1,0 +1,27 @@
+<html>
+    <head>
+        <title>Finances</title>
+        <style>
+        #options {
+            background-color: orange;
+        }
+        .option {
+            display: inline-block;
+            padding: 8px;
+            background-color: yellow
+        }
+        .header {
+            font-weight: bold;
+        }
+        </style>
+    </head>
+    <body>
+        <div id='options'>
+            <a href='/balance' class='option'>Balances</a>
+            <a href='/history' class='option'>History</a>
+        </div>
+        <div id='body'>
+            {:BODY:}
+        </div>
+    </body>
+</html>
