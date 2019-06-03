@@ -8,15 +8,26 @@
         .option {
             display: inline-block;
             padding: 8px;
-            background-color: yellow
+            background-color: yellow;
         }
         .header {
             font-weight: bold;
+        }
+        td {
+            padding-left: 8px;
+            padding-right: 8px;
+        }
+        .data tr td:nth-child(odd){ 
+		    background: #eeeeee;
+        }
+        .data tr td:nth-child(even){
+            background: #dddddd;
         }
         </style>
     </head>
     <body>
         <div id='options'>
+            <a href='/add' class='option'>Add</a>
             <a href='/balance' class='option'>Balances</a>
             <a href='/history' class='option'>History</a>
         </div>

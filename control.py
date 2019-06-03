@@ -17,7 +17,6 @@ def load(argDict={}):
     confDir = '~/.config/finance'
     if 'config' in argDict:
         confDir = argDict['config']
-        args = args[:i]
     confDir = os.path.expanduser(confDir)
 
     if confDir[-1] != '/':
