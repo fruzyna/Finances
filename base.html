@@ -3,12 +3,25 @@
         <title>Finances</title>
         <style>
         #options {
-            background-color: orange;
+            /*background-color: yellow;*/
+        }
+        #title {
+            display: table-cell;
+            margin: 0px;
+            padding: 8px;
+            background-color: lightblue;
         }
         .option {
-            display: inline-block;
+            display: table-cell;
+            background-color: lightblue;
             padding: 8px;
-            background-color: yellow;
+            vertical-align: middle;
+            color: black;
+            text-decoration: none;
+        }
+        .spacer {
+            display: table-cell;
+            width: 8px;
         }
         .header {
             font-weight: bold;
@@ -26,12 +39,16 @@
         </style>
     </head>
     <body>
-        <div id='options'>
-            <a href='/add' class='option'>Add</a>
-            <a href='/balance' class='option'>Balances</a>
-            <a href='/history' class='option'>History</a>
+        <div id="options">
+            <h1 id="title">Finances</h1>
+            <span class="spacer"></span>
+            <a href="/balance" class="option">Balances</a>
+            <span class="spacer"></span>
+            <a href="/add" class="option">Add</a>
+            <span class="spacer"></span>
+            <a href="/history" class="option">History</a>
         </div>
-        <div id='body'>
+        <div id="body">
             {:BODY:}
         </div>
     </body>

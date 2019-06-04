@@ -248,7 +248,7 @@ def accountInfo(confDir, accounts, categories, log, args):
     reach    = getOpArg(args, 'months', 6)
 
     # request data
-    results = totalsPerUnitTime(log, 'months', acct=acct, start=starting, end=ending)
+    results = totalsPerUnitTime(log, 'months', categories, acct=acct, start=starting, end=ending)
 
     # print title
     title = acct + ' Stats:'

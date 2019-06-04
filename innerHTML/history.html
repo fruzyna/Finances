@@ -1,0 +1,32 @@
+<h2>History</h2>
+<form id="hist"><table>
+<tr><td>Results:</td>
+<td><input type="number" name="results" size="4" value="{:RESULTS:}"></td>
+<td>Title:</td>
+<td><input type="text" name="title" value="{:TITLE:}"></td>
+<td>Location:</td>
+<td><input type="text" name="loc" value="{:LOC:}"></td></tr>
+<tr><td>Transfer Type:</td>
+<td><select name="transType" form="hist">
+{:TRANSTYPE:}
+</select></td>
+<td>Account:</td>
+<td><select name="acct" form="hist">
+{:ACCTS:}
+</select></td>
+<td>Category:</td>
+<td><select name="cat" form="hist">
+{:CATS:}
+</select></td></tr>
+<tr><td>Start Date:</td>
+<td><input type="text" name="start" size="10" value="{:START:}"></td>
+<td>End Date:</td>
+<td><input type="text" name="end" size="10" value="{:END:}"></td>
+<td><input type="submit" value="Search"></td></tr>
+</table></form>
+<table class="data">
+<tr class="header">
+{:HEADERS:}
+</tr>
+{:ROWS:}
+</table>
