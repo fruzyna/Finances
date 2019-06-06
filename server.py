@@ -1,6 +1,8 @@
 import http.server, re, urllib.parse
+import matplotlib.pyplot as plt
 
 from control import *
+from features import *
 
 HOST = '127.0.0.1'
 PORT = 8080
@@ -9,18 +11,25 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
 
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-
         # generate the web page
-        text = self.generate_page()
-        self.wfile.write(bytes(text, 'utf8'))
+        path = urllib.parse.unquote_plus(self.path)
+        if path.endswith('.png'):
+            with open(self.path[1:], 'rb') as f:
+                self.send_header('Content-type', 'image/png')
+                self.end_headers()
+                self.wfile.write(f.read())
+        else:
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+
+            text = self.generate_page()
+            self.wfile.write(bytes(text, 'utf8'))
         return
 
     # generate web page based off url and queries
     def generate_page(self):
         # load in finance data
-        confDir, accounts, categories, log = load()
+        finances = load()
 
         # load in base page from file
         body = 'No page.'
@@ -33,7 +42,7 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
         if path.startswith('/history'):
             # history tab
             # read queries and create defaults
-            queries = {'results': '5', 'title': '', 'loc': '', 'acct': '', 'amount': '', 'note': '', 'cat': '', 'start': '', 'end': '', 'transType': ''}
+            queries = {'results': '5', 'title': '', 'loc': '', 'acct': '', 'amount': '', 'note': '', 'cat': '', 'start': '', 'end': '', 'transType': '', 'plot': ''}
             queryStrs = re.findall('([A-z0-9]+=[^&]+)', path)
             for q in queryStrs:
                 key, val = q.split('=')
@@ -48,10 +57,10 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
 
             # fill in blanks with text from queries
             text = text.replace('{:RESULTS:}', queries['results'])
-            text = text.replace('{:TITLE:}', correctFormat('title', queries['title']))
-            text = text.replace('{:LOC:}', correctFormat('location', queries['loc']))
-            text = text.replace('{:START:}', correctFormat('date', queries['start']))
-            text = text.replace('{:END:}', correctFormat('date', queries['end']))
+            text = text.replace('{:TITLE:}', correctFormat(finances, 'title', queries['title']))
+            text = text.replace('{:LOC:}', correctFormat(finances, 'location', queries['loc']))
+            text = text.replace('{:START:}', correctFormat(finances, 'date', queries['start']))
+            text = text.replace('{:END:}', correctFormat(finances, 'date', queries['end']))
 
             # fill in transaction type options
             trans = ''
@@ -64,7 +73,7 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
 
             # fill in accounts
             accts = ''
-            for acct in [''] + accounts:
+            for acct in [''] + finances.accounts:
                 selected = ''
                 if acct == queries['acct']:
                     selected = ' selected="selected"'
@@ -73,7 +82,7 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
 
             # fill in categories
             cats = ''
-            keys = [''] + [key for key in categories] 
+            keys = [''] + [key for key in finances.categories] 
             for cat in keys:
                 selected = ''
                 if cat == queries['cat']:
@@ -82,7 +91,7 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
             text = text.replace('{:CATS:}', cats)
 
             # search database
-            results = getLast(log, int(queries['results']), categories, title=queries['title'], location=queries['loc'], acct=queries['acct'], start=queries['start'], end=queries['end'], transType=queries['transType'], category=queries['cat'])
+            results, total = showHistory(finances, queries['results'], queries['acct'], queries['start'], queries['end'], queries['title'], queries['loc'], queries['note'], queries['cat'], queries['transType'])
             
             # place column names in table
             cols = ''
@@ -98,10 +107,15 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
                     rows += '<td>' + str(value) + '</td>'
                 rows += '</tr>'
             text = text.replace('{:ROWS:}', rows)
+
+            if queries['plot'] == 'on':
+                visualHistory(finances, results)
+                plt.savefig('vhist.png')
+                text += '<img src="vhist.png">'
         elif path.startswith('/addlog'):
             # request to create a new log entry
             # read queries and create defaults
-            queries = {'title': '', 'loc': '', 'date': '', 'to': '', 'from': '', 'amount': '', 'note': ''}
+            queries = {'title': '', 'loc': '', 'date': dt.today().strftime(dateFormat), 'to': '', 'from': '', 'amount': '', 'note': ''}
             queryStrs = re.findall('([A-z0-9]+=[^&]+)', path)
             for q in queryStrs:
                 key, val = q.split('=')
@@ -110,9 +124,7 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
                 queries[key] = val
 
             # create the row and save to file
-            log.loc[log.shape[0]] = [correctFormat('title', queries['title']), correctFormat('location', queries['loc']), correctFormat('date', queries['date']), queries['from'], queries['to'], correctFormat('amount', queries['amount']), correctFormat('note', queries['note'])]
-            logFile = confDir + 'log.csv'
-            save(log, logFile)
+            success = add(finances, queries['title'], queries['loc'], queries['date'], queries['from'], queries['to'], queries['amount'], queries['note'])
 
             # redirect to a history page showing the last entry (may not be the new one)
             text = '<meta http-equiv="refresh" content="0; URL=\'/history?results=1\'" />'
@@ -126,14 +138,9 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
                 if key[-1] == '?':
                     key = key[:-1]
                 queries[key] = val
-            newAcct = correctFormat('account', queries['name'], new=True)
 
-            # add the account to the accounts file
-            accounts.append(newAcct)
-            acctFile = confDir + 'accounts.csv'
-            with open(acctFile, 'w+') as f:
-                f.write(','.join(accounts))
-
+            addAccount(finances, queries['name'])
+                
             # redirect to the balances page
             text = '<meta http-equiv="refresh" content="0; URL=\'/balance\'" />'
         elif path.startswith('/addcat'):
@@ -147,24 +154,7 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
                     key = key[:-1]
                 queries[key] = val
 
-            # process queries
-            name    = correctFormat('category', queries['name'], new=True)
-            goal    = correctFormat('amount', queries['goal'])
-            titles  = [correctFormat('title', title) for title in queries['titles'].split(',')]
-            locs    = [correctFormat('location', loc) for loc in queries['locs'].split(',')]
-            accts   = [correctFormat('account', acct, accounts=accounts) for acct in queries['accts'].split(',')]
-
-            # add the categories to the categories file
-            categories[name] = [goal, titles, locs, accts]
-            catFile = confDir + 'categories.csv'
-            with open(catFile, 'w+') as f:
-                for catName in categories:
-                    cat = categories[catName]
-                    goal    = cat[0]
-                    titles  = cat[1]
-                    locs    = cat[2]
-                    accts   = cat[3]
-                    f.write(catName + ',' + str(goal) + ',' + ':'.join(titles) + ',' + ':'.join(locs) + ',' + ':'.join(accts) + '\n')
+            name = addCategory(finances, queries['name'], queries['goal'], queries['titles'], queries['locs'], queries['accts'])
 
             # redirect to a history page of the category
             text = '<meta http-equiv="refresh" content="0; URL=\'/history?cat=' + name + '\'" />'
@@ -177,7 +167,7 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
 
             # fill in accounts
             accts = ''
-            for acct in [''] + accounts:
+            for acct in [''] + finances.accounts:
                 accts += '<option value="' + acct + '">' + acct + '</option>'
             text = text.replace('{:ACCTS:}', accts)
         else:
@@ -190,13 +180,9 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
             # get each accounts balance and process
             accts = ''
             total = 0
-            for acct in accounts:
-                _,_, delta, _,_,_ = getAccountInfo(log, acct)
-                valStr = valueToString(delta)
-                accts += '<tr><td>' + acct + '</td><td>' + str(valStr) + '</td></tr>'
-                total += delta
-            # add total
-            accts += '<tr><td>Total</td><td>' + valueToString(total) + '</td></tr>'
+            balances = balance(finances)
+            for acct in balances:
+                accts += '<tr><td>' + acct + '</td><td>' + balances[acct] + '</td></tr>'
             # fill in all accounts
             text = text.replace('{:ACCTS:}', accts)
         # add the requested section to the core of the webpage

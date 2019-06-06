@@ -36,7 +36,7 @@ for i, arg in enumerate(args):
 
 #print('Arguments:', str(argDict))
 
-confDir, accounts, categories, log = load(argDict)
+finances = load(argDict)
 
 # get command
 mode = 'help'
@@ -46,6 +46,6 @@ if 'cmd' in argDict:
 # execute command
 if mode in cmds:
     fn = cmds[mode][0]
-    fn(confDir, accounts, categories, log, argDict)
+    fn(finances, argDict)
 else:
-    unknown(confDir, accounts, categories, log, argDict)
+    unknown(finances, argDict)

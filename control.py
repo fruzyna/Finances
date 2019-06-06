@@ -11,6 +11,16 @@ from decimal import *
 
 dateFormat = '%Y-%m-%d'
 
+class Finances:
+    def __init__(self, confDir, accounts, categories, log):
+        self.confDir = confDir
+        self.acctFile = confDir + 'accounts.csv'
+        self.catFile = confDir + 'categories.csv'
+        self.logFile = confDir + 'log.csv'
+        self.accounts = accounts
+        self.categories = categories
+        self.log = log
+
 # Load in necessary data
 def load(argDict={}):
     # use default or provided config file
@@ -71,7 +81,7 @@ def load(argDict={}):
                 categories[name] = [goal, titles, locs, accts]
 
     log = pd.read_csv(logFile, sep=',', header=0, parse_dates=['date'])[['title', 'location', 'date', 'from', 'to', 'amount', 'note']]
-    return confDir, accounts, categories, log
+    return Finances(confDir, accounts, categories, log)
 
 # Prompt for creating list of accounts
 def setupAccts(acctFile):
@@ -99,13 +109,13 @@ def setupLog(logFile):
 
 # TODO account for new unprocessed dates in date column
 # A history/search tool
-def getLast(log, count, categories={}, acct='', start='', end='', title='', location='', note='', transType='', category=''):
-    hLog = filter(log, categories, acct=acct, start=start, end=end, title=title, location=location, note=note, transType=transType, category=category)
+def getLast(finances, count, acct='', start='', end='', title='', location='', note='', transType='', category=''):
+    hLog = filter(finances, acct=acct, start=start, end=end, title=title, location=location, note=note, transType=transType, category=category)
     return hLog.sort_values('date').tail(count)
 
 # Filter the database
-def filter(log, categories={}, acct='', start='', end='', title='', location='', note='', transType='', category=''):
-    hLog = log
+def filter(finances, acct='', start='', end='', title='', location='', note='', transType='', category=''):
+    hLog = finances.log.copy()
     if acct != '':
         hLog = hLog[(hLog['from'] == acct) | (hLog['to'] == acct)]
     if start != '':
@@ -119,7 +129,7 @@ def filter(log, categories={}, acct='', start='', end='', title='', location='',
     if note != '':
         hLog = hLog[hLog['note'].str.contains(note)]
     if category != '':
-        hLog = hLog[hLog.apply(lambda row: determineCategory(row, categories), axis=1) == category]
+        hLog = hLog[hLog.apply(lambda row: determineCategory(row, finances.categories), axis=1) == category]
     if transType == 'to':
         hLog = hLog[(hLog['from'] == '-') & (hLog['to'] != '-')]
     elif transType == 'from':
@@ -136,8 +146,8 @@ def getOpArg(args, arg, default=''):
     return val
 
 # Gets basic account stats
-def getAccountInfo(log, account, start='', end=''):
-    cLog = log
+def getAccountInfo(finances, account, start='', end=''):
+    cLog = finances.log.copy()
 
     # filter by date (optional)
     if start != '':
@@ -163,9 +173,9 @@ def getAccountInfo(log, account, start='', end=''):
 months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 # Gets the total for an account per day/month
-def totalsPerUnitTime(log, units, categories, acct='', start='', end='', category=''):
+def totalsPerUnitTime(finances, units, acct='', start='', end='', category=''):
     # get appropriate data and split into to and from
-    logs = filter(log, categories, acct=acct, start=start, end=end, category=category)
+    logs = filter(finances, acct=acct, start=start, end=end, category=category)
     if acct:
         toAcct = logs[logs['to'] == acct]
         fromAcct = logs[logs['from'] == acct]
@@ -202,7 +212,7 @@ def totalsPerUnitTime(log, units, categories, acct='', start='', end='', categor
 
     # account for the total at the start
     if start:
-        baseline = totalAt(log, start, acct=acct)
+        baseline = totalAt(finances, start, acct=acct)
         results[0] = results[0] + baseline
 
     # replace tuples with human readable dates
@@ -227,26 +237,26 @@ def totalsPerUnitTime(log, units, categories, acct='', start='', end='', categor
     return results
 
 # get the progress of a category goal for a month
-def getMonthProgress(log, catName, categories, month, year):
+def getMonthProgress(finances, catName, month, year):
     first = dt(year, month, 1).strftime(dateFormat)
     last = dt(year, month, monthrange(year, month)[1]).strftime(dateFormat)
-    month = filter(log, start=first, end=last, categories=categories, category=catName)
+    month = filter(finances, start=first, end=last, category=catName)
     monthTo = month[month['from'] == '-']
     monthFrom = month[month['to'] == '-']
     spent = -(monthTo['amount'].sum() - monthFrom['amount'].sum())
-    goal = categories[catName][0]
+    goal = finances.categories[catName][0]
     progress = 0
     if goal != '':
-        goal = correctFormat('amount', goal)
+        goal = correctFormat(finances, 'amount', goal)
         progress = round(100 * (spent / goal), 2)
     else:
         goal = 0
     return month, first, last, spent, goal, progress
 
 # Gets the total for an account at a date
-def totalAt(log, date, acct=''):
+def totalAt(finances, date, acct=''):
     # get appropriate data and split into to and from
-    logs = filter(log, acct=acct, end=date)
+    logs = filter(finances, acct=acct, end=date)
     if acct:
         toAcct = logs[logs['to'] == acct]
         fromAcct = logs[logs['from'] == acct]
@@ -279,12 +289,19 @@ def valueToString(value):
         cIndex = pIndex - (i + 1) * 3 - i
         valStr = valStr[:cIndex] + ',' + valStr[cIndex:]
     return valStr
+
+def addEntry(finances, title, loc, date, src, to, amount, note=''):
+    # create the row
+    finances.log.loc[finances.log.shape[0]] = [title, loc, date, src, to, amount, note]
+    return True
     
 # checks that a cell is formatted correctly
-def correctFormat(column, value, new=False, accounts=[], categories={}):
+def correctFormat(finances, column, value, new=False):
     value = value.strip()
-    if value == '':
+    if value == '' and not new:
         return value
+    elif value == '':
+        raise Exception('{} must not be empty.'.format(column))
     elif column == 'title' or column == 'location':
         # title and location must be letters, numbers, hyphens, and apostrophes
         for c in value:
@@ -303,8 +320,8 @@ def correctFormat(column, value, new=False, accounts=[], categories={}):
         # to and from must be a valid account and upper case
         value = value.upper()
         if value != '-':
-            if not new and not value in accounts:
-                raise Exception('Account, {}, does not exist in {}.'.format(value, accounts))
+            if not new and not value in finances.accounts:
+                raise Exception('Account, {}, does not exist in {}.'.format(value, finances.accounts))
             for c in value:
                 if not c.isalpha():
                     raise Exception('Account name must consist only of letters. {} found.'.format(c))
@@ -313,8 +330,8 @@ def correctFormat(column, value, new=False, accounts=[], categories={}):
         # to and from must be a valid category and upper case
         value = value.upper()
         if value != '-':
-            if not new and not value in categories:
-                raise Exception('Category, {}, does not exist in {}.'.format(value, categories))
+            if not new and not value in finances.categories:
+                raise Exception('Category, {}, does not exist in {}.'.format(value, finances.categories))
             for c in value:
                 if not c.isalpha():
                     raise Exception('Category name must consist only of letters. {} found.'.format(c))
