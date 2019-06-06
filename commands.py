@@ -181,9 +181,9 @@ def CLIaccountInfo(finances, args):
     print(title)
     print('-'*len(title))
 
-    # fetch lasunkmonths and print
-    if reach !=unk:
-        print(tunkate(rows, headers=['Month', 'Delta']), '\n')
+    # fetch last 6 months and print
+    if reach != '0':
+        print(tabulate(rows, headers=['Month', 'Delta']), '\n')
 
     print(tabulate([['Count', toTrans, fromTrans], ['Value', add, sub]], headers=['', 'In', 'Out']))
     print('\n\u001b[1mNet Total:', delta)
