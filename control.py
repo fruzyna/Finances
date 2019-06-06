@@ -296,6 +296,11 @@ def addEntry(finances, title, loc, date, src, to, amount, note=''):
     # create the row
     finances.log.loc[finances.log.shape[0]] = [title, loc, date, src, to, amount, note]
     return True
+
+def editEntry(finances, row, title, loc, date, src, to, amount, note=''):
+    # create the row
+    finances.log.loc[row] = [title, loc, date, src, to, amount, note]
+    return True
     
 # checks that a cell is formatted correctly
 def correctFormat(finances, column, value, new=False):

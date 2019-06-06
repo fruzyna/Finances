@@ -47,6 +47,32 @@ def add(finances, title, loc, date, src, to, amount, note):
     save(finances.log, finances.logFile)
     return True
 
+# command to add a new transation
+def editWhole(finances, row, title, loc, date, src, to, amount, note):
+    if src == '' and to == '':
+        return False
+    elif src == '':
+        src = '-'
+    elif to == '':
+        to = '-'
+
+    if date == '':
+        date = dt.today().strftime(dateFormat)
+
+    title   = correctFormat(finances, 'title', title, new=True)
+    loc     = correctFormat(finances, 'location', loc, new=True)
+    date    = correctFormat(finances, 'date', date)
+    src     = correctFormat(finances, 'from', src)
+    to      = correctFormat(finances, 'to', to)
+    amount  = correctFormat(finances, 'amount', amount)
+    note    = correctFormat(finances, 'note', note)
+    row     = int(row)
+
+    # add to log and save
+    editEntry(finances, row, title, loc, date, src, to, amount, note)
+    save(finances.log, finances.logFile)
+    return True
+
 # show last x transactions based on criteria
 def showHistory(finances, count, acct, start, end, title, loc, note, category, transType):
     # optional arguments
