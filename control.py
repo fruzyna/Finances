@@ -269,6 +269,8 @@ def totalAt(finances, date, acct=''):
 
 # converts a dollar value to a pretty string
 def valueToString(value):
+    if value == 0:
+        return '$0.00'
     valStr = str(round(value, 2))
 
     # add dollar sign

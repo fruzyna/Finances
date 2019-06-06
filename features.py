@@ -78,13 +78,17 @@ def goalProgress(finances, catName, month, year):
 
     # fetch progress for month
     month, first, last, spent, goal, progress = getMonthProgress(finances, catName, today.month, today.year)
-    return first, last, month, goal, valueToString(spent), valueToString(goal), str(progress)
+    if progress == 0:
+        progress = '0'
+    else:
+        progress = str(progress)
+    return first, last, month, goal, valueToString(spent), valueToString(goal), progress
 
 # display the progress of a category goal in the current month
-def monthlyGoal(finances, catName, plot, months):
+def monthlyGoal(finances, catName, months):
     # get parameters
     catName = correctFormat(finances, 'category', catName)
-    months = int(args[2])
+    months = int(months)
 
     today = dt.today()
     m = today.month
@@ -127,20 +131,18 @@ def monthlyGoal(finances, catName, plot, months):
     goals = ['Goal'] + goals
     progresses = ['Progress'] + progresses
 
-    if plot:
-        # determine what is above and below goal
-        above = np.maximum(np.array(percents) - 100, 0)
-        below = np.minimum(np.array(percents), 100)
+    # determine what is above and below goal
+    above = np.maximum(np.array(percents) - 100, 0)
+    below = np.minimum(np.array(percents), 100)
 
-        # plot percentages
-        fig, ax = plt.subplots() 
-        ax.bar(dates[1:], below, 0.35, color='g')
-        ax.bar(dates[1:], above, 0.35, color='r', bottom=100)
-        ax.plot(dates[1:], [100] * months, 'k--')
-        ax.set_title(catName + ' Goal Progress over Last ' + str(months) + ' Months')
-        ax.set_xlabel('Month')
-        ax.set_ylabel('Percent of Goal')
-        plt.show()
+    # plot percentages
+    fig, ax = plt.subplots() 
+    ax.bar(dates[1:], below, 0.35, color='g')
+    ax.bar(dates[1:], above, 0.35, color='r', bottom=100)
+    ax.plot(dates[1:], [100] * months, 'k--')
+    ax.set_title(catName + ' Goal Progress over Last ' + str(months) + ' Months')
+    ax.set_xlabel('Month')
+    ax.set_ylabel('Percent of Goal')
 
     return dates, spents, goals, progresses
 

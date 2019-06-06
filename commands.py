@@ -91,13 +91,13 @@ def CLIgoalProgress(finances, args):
             year = args[3]
 
         # fetch progress for month
-        first, last, month, goal, spent, goal, progress = goalProgress(finances, catName, month, year)
+        first, last, month, igoal, spent, sgoal, progress = goalProgress(finances, catName, month, year)
 
         # print results
         print(catName, 'from', first, 'to', last)
         print(month)
-        if goal > 0:
-            print(tabulate([['Spent', spent], ['Goal', goal], ['Progress', progress + '%']]))
+        if igoal > 0:
+            print(tabulate([['Spent', spent], ['Goal', sgoal], ['Progress', progress + '%']]))
         else:
             print('Spent:', spent)
     else:
@@ -113,8 +113,10 @@ def CLImonthlyGoal(finances, args):
         if 2 in args:
             months = int(args[2])
 
-        dates, spents, goals, progresses = monthlyGoal(finances, catName, plot, months)
+        dates, spents, goals, progresses = monthlyGoal(finances, catName, months)
         print(tabulate([dates, spents, goals, progresses]))
+        if plot:
+            plt.show()
     else:
         print('Requires at least 1 argument, the name of the category.')
 
@@ -179,9 +181,9 @@ def CLIaccountInfo(finances, args):
     print(title)
     print('-'*len(title))
 
-    # fetch last 6 months and print
-    if reach != '0':
-        print(tabulate(rows, headers=['Month', 'Delta']), '\n')
+    # fetch lasunkmonths and print
+    if reach !=unk:
+        print(tunkate(rows, headers=['Month', 'Delta']), '\n')
 
     print(tabulate([['Count', toTrans, fromTrans], ['Value', add, sub]], headers=['', 'In', 'Out']))
     print('\n\u001b[1mNet Total:', delta)
@@ -311,7 +313,7 @@ def CLIhelpCmd(finances, args):
             print(key, '-', cmds[key][1])
 
 # warn a command is unknown
-def CLIunknown(finances, args):
+def unknown(finances, args):
     print('Invalid command,', args['cmd'])
 
 # dictionary of commands  

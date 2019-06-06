@@ -244,6 +244,24 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
             plot(finances, queries['units'], queries['acct'], queries['start'], queries['end'], invert, points, noLine, allPoints, totals)
             plt.savefig('plot.png')
             text += '<img src="plot.png">'
+        elif path.startswith('/goals'):
+            # goals tab
+            # load in base balances section
+            text = 'No page.'
+            with open('innerHTML/goals.html', 'r') as f:
+                text = f.read()
+                
+            # get each accounts balance and process
+            cats = ''
+            for cat in finances.categories:
+                first, last, month, igoal, spent, sgoal, progress = goalProgress(finances, cat, '', '')
+                if igoal > 0:
+                    cats += '<tr><td>' + cat + '</td><td>' + sgoal + '</td><td>' + spent + '</td><td>' + progress + '%</td></tr>'
+                else:
+                    cats += '<tr><td>' + cat + '</td><td>No Goal</td><td>' + spent + '</td><td></td></tr>'
+            # fill in all accounts
+            text = text.replace('{:CATS:}', cats)
+            text += '(from ' + first + ' to ' + last + ')'
         else:
             # balances tab
             # load in base balances section
