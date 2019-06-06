@@ -274,7 +274,6 @@ def CLIplot(finances, args):
 
     # get optional arguments
     acct        = getOpArg(args, 'acct')
-    cat         = getOpArg(args, 'cat')
     start       = getOpArg(args, 'start')
     end         = getOpArg(args, 'end')
     invert      = getOpArg(args, 'invert', default=False)
@@ -283,7 +282,7 @@ def CLIplot(finances, args):
     allPoints   = getOpArg(args, 'alldays', default=False)
     totals      = getOpArg(args, 'totals', default=False)
 
-    plot(finances, units, acct, cat, start, end, invert, points, noLine, allPoints, totals)
+    plot(finances, units, acct, start, end, invert, points, noLine, allPoints, totals)
     plt.show()
 
 # reset the configuration

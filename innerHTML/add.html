@@ -1,39 +1,39 @@
 <h2>Add Entry</h2>
 <form id="entry" action="/addlog"><table>
 <tr><td>Title:</td>
-<td><input type="text" name="title"></td>
-<td>Location:</td>
-<td><input type="text" name="loc"></td></tr>
+    <td><input type="text" name="title"></td>
+    <td>Location:</td>
+    <td><input type="text" name="loc"></td></tr>
 <tr><td>From:</td>
-<td><select name="from" form="entry">
-{:ACCTS:}
-</select></td>
-<td>To:</td>
-<td><select name="to" form="entry">
-{:ACCTS:}
-</select></td>
-<td>Amount:</td>
-<td><input type="number" name="amount" min="0" step=".01"></td></tr>
+    <td><select name="from" form="entry">
+    {:ACCTS:}
+    </select></td>
+    <td>To:</td>
+    <td><select name="to" form="entry">
+    {:ACCTS:}
+    </select></td>
+    <td>Amount:</td>
+    <td><input type="number" name="amount" min="0" step=".01"></td></tr>
 <tr><td>Date:</td>
-<td><input type="text" name="date" size="10"></td>
-<td>Note:</td>
-<td><input type="text" name="note" size="10"></td>
-<td><input type="submit" value="Log"></td>
+    <td><input type="text" name="date" size="10"></td>
+    <td>Note:</td>
+    <td><input type="text" name="note" size="10"></td>
+    <td><input type="submit" value="Log"></td>
 </table></form>
 
 <h2>Add Category</h2>
 <form id="cat" action="/addcat"><table>
 <tr><td>Name:</td>
-<td><input type="text" name="name"></td>
-<td>Goal:</td>
-<td><input type="number" name="goal"></td></tr>
+    <td><input type="text" name="name"></td>
+    <td>Goal:</td>
+    <td><input type="number" name="goal"></td></tr>
 <tr><td>Titles:</td>
-<td><input type="text" name="titles"></td>
-<td>Locations:</td>
-<td><input type="text" name="locs"></td></tr>
+    <td><input type="text" name="titles"></td>
+    <td>Locations:</td>
+    <td><input type="text" name="locs"></td></tr>
 <tr><td>Accounts:</td>
-<td><input type="text" name="accts"></td>
-<td><input type="submit" value="Add"></td></tr>
+    <td><input type="text" name="accts"></td>
+    <td><input type="submit" value="Add"></td></tr>
 </table></form>
 
 <h2>Add Account</h2>

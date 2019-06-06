@@ -272,17 +272,16 @@ def edit(finances, row, column, new):
         return False
 
 # plot an account's value over time
-def plot(finances, units, acct, cat, start, end, invert, points, noLine, allPoints, totals):
+def plot(finances, units, acct, start, end, invert, points, noLine, allPoints, totals):
     units = units.lower()
 
     # get optional arguments
-    acct        = correctFormat(finances, 'account', acct)
-    cat         = correctFormat(finances, 'category', cat)
-    start       = correctFormat(finances, 'date', start)
-    end         = correctFormat(finances, 'date', end)
+    acct    = correctFormat(finances, 'account', acct)
+    start   = correctFormat(finances, 'date', start)
+    end     = correctFormat(finances, 'date', end)
 
     # request data
-    results = totalsPerUnitTime(finances, units, acct=acct, start=start, end=end, category=cat)
+    results = totalsPerUnitTime(finances, units, acct=acct, start=start, end=end)
 
     # give up if request failed
     if results.empty:

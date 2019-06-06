@@ -112,6 +112,8 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
                 visualHistory(finances, results)
                 plt.savefig('vhist.png')
                 text += '<img src="vhist.png">'
+                text = text.replace('{:CHECKED:}', ' checked')
+            text = text.replace('{:CHECKED:}', '')
         elif path.startswith('/addlog'):
             # request to create a new log entry
             # read queries and create defaults
@@ -170,6 +172,78 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
             for acct in [''] + finances.accounts:
                 accts += '<option value="' + acct + '">' + acct + '</option>'
             text = text.replace('{:ACCTS:}', accts)
+        elif path.startswith('/plot'):
+            # plot tab
+            # read queries and create defaults
+            queries = {'units': 'days', 'acct': '', 'start': '', 'end': '', 'invert': '', 'points': '', 'noLine': '', 'allPoints': '', 'totals': ''}
+            queryStrs = re.findall('([A-z0-9]+=[^&]+)', path)
+            for q in queryStrs:
+                key, val = q.split('=')
+                if key[-1] == '?':
+                    key = key[:-1]
+                queries[key] = val
+            
+            # load in base history section
+            text = 'No page.'
+            with open('innerHTML/plot.html', 'r') as f:
+                text = f.read()
+
+            # fill in blanks with text from queries
+            text = text.replace('{:START:}', correctFormat(finances, 'date', queries['start']))
+            text = text.replace('{:END:}', correctFormat(finances, 'date', queries['end']))
+
+            invert = queries['invert'] == 'on'
+            if invert:
+                text = text.replace('{:ICHECKED:}', ' checked')
+            else:
+                text = text.replace('{:ICHECKED:}', '')
+
+            points = queries['points'] == 'on'
+            if points:
+                text = text.replace('{:PCHECKED:}', ' checked')
+            else:
+                text = text.replace('{:PCHECKED:}', '')
+
+            noLine = queries['noLine'] == 'on'
+            if noLine:
+                text = text.replace('{:NCHECKED:}', ' checked')
+            else:
+                text = text.replace('{:NCHECKED:}', '')
+
+            allPoints = queries['allPoints'] == 'on'
+            if allPoints:
+                text = text.replace('{:ACHECKED:}', ' checked')
+            else:
+                text = text.replace('{:ACHECKED:}', '')
+
+            totals = queries['totals'] == 'on'
+            if totals:
+                text = text.replace('{:TCHECKED:}', ' checked')
+            else:
+                text = text.replace('{:TCHECKED:}', '')
+
+            # fill in transaction type options
+            trans = ''
+            for tt in ['days', 'weeks', 'months', 'quarters', 'years']:
+                selected = ''
+                if tt == queries['units']:
+                    selected = ' selected="selected"'
+                trans += '<option value="' + tt + '"' + selected + '>' + tt + '</option>'
+            text = text.replace('{:UNITS:}', trans)
+
+            # fill in accounts
+            accts = ''
+            for acct in [''] + finances.accounts:
+                selected = ''
+                if acct == queries['acct']:
+                    selected = ' selected="selected"'
+                accts += '<option value="' + acct + '"' + selected + '>' + acct + '</option>'
+            text = text.replace('{:ACCTS:}', accts)
+
+            # search database
+            plot(finances, queries['units'], queries['acct'], queries['start'], queries['end'], invert, points, noLine, allPoints, totals)
+            plt.savefig('plot.png')
+            text += '<img src="plot.png">'
         else:
             # balances tab
             # load in base balances section

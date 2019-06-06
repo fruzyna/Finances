@@ -1,0 +1,21 @@
+<h2>History</h2>
+<form id="hist"><table>
+<tr><td>Units:</td>
+    <td><select name="units" form="hist">
+    {:UNITS:}
+    </select></td>
+    <td>Account:</td>
+    <td><select name="acct" form="hist">
+    {:ACCTS:}
+    </select></td></tr>
+<tr><td>Start Date:</td>
+    <td><input type="text" name="start" size="10" value="{:START:}"></td>
+    <td>End Date:</td>
+    <td><input type="text" name="end" size="10" value="{:END:}"></td></tr>
+<tr><td><input type="checkbox" name="invert"{:ICHECKED:}>Invert</td>
+    <td><input type="checkbox" name="points"{:PCHECKED:}>Points</td>
+    <td><input type="checkbox" name="noLine"{:NCHECKED:}>No Line</td>
+    <td><input type="checkbox" name="allPoints"{:ACHECKED:}>All Points</td>
+    <td><input type="checkbox" name="totals"{:TCHECKED:}>Totals</td>
+    <td><input type="submit" value="Search"></td></tr>
+</table></form>
