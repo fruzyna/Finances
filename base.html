@@ -3,22 +3,47 @@
         <title>Finances</title>
         <style>
         #options {
-            /*background-color: yellow;*/
+            display: inline-block;
+            vertical-align: top;
+            margin-right: 3px;
         }
         #title {
-            display: table-cell;
+            display: block;
             margin: 0px;
             padding: 8px;
             background-color: lightblue;
         }
         .option {
-            display: table-cell;
+            display: block;
             background-color: lightblue;
             padding: 8px;
-            vertical-align: middle;
+            margin-top: 8px;
             color: black;
             text-decoration: none;
         }
+        .option:hover {
+            background-color: lightyellow;
+        }
+
+        #body {
+            display: inline-block;
+        }
+        #header {
+            display: block;
+            background-color: lightblue;
+        }
+        #page {
+            display: table-cell;
+            vertical-align: middle;
+            margin: 0px;
+            padding: 0px;
+            padding-left: 8px;
+            height: 55px;
+        }
+        #content {
+            padding: 8px;
+        }
+
         .spacer {
             display: table-cell;
             width: 8px;
@@ -53,7 +78,10 @@
             <a href="/plot" class="option">Plot</a>
         </div>
         <div id="body">
-            {:BODY:}
+            <div id="header"><h2 id="page">{:PAGE:}</h2></div>
+            <div id="content">
+                {:BODY:}
+            </div>
         </div>
     </body>
 </html>

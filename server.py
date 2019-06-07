@@ -310,6 +310,7 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
         text = ''
         # remove encoding from url
         path = urllib.parse.unquote_plus(self.path)
+        page = ''
         queries = {}
         queryStrs = re.findall('([A-z0-9]+=[^&]+)', path)
         for q in queryStrs:
@@ -317,27 +318,34 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
             if key[-1] == '?':
                 key = key[:-1]
             queries[key] = val
+        page = ''
         if path.startswith('/history'):
-           text = WEBhistory(finances, queries, path)
+            page = 'History'
+            text = WEBhistory(finances, queries, path)
         elif path.startswith('/addlog'):
-           text = WEBadd(finances, queries)
+            text = WEBadd(finances, queries)
         elif path.startswith('/addacct'):
-           text = WEBaddAccount(finances, queries)
+            text = WEBaddAccount(finances, queries)
         elif path.startswith('/addcat'):
-           text = WEBaddCategory(finances, queries)
+            text = WEBaddCategory(finances, queries)
         elif path.startswith('/add'):
-           text = WEBaddPage(finances, queries)
+            page = 'Add'
+            text = WEBaddPage(finances, queries)
         elif path.startswith('/plot'):
-           text = WEBplot(finances, queries)
+            page = 'Plot'
+            text = WEBplot(finances, queries)
         elif path.startswith('/goals'):
-           text = WEBgoalProgress(finances, queries)
+            page = 'Goals'
+            text = WEBgoalProgress(finances, queries)
         elif path.startswith('/edit'):
-           text = WEBedit(finances, queries)
+            text = WEBedit(finances, queries)
         elif path.startswith('/delete'):
-           text = WEBdelete(finances, queries)
+            text = WEBdelete(finances, queries)
         else:
-           text = WEBbalance(finances, queries)
+            page = 'Balances'
+            text = WEBbalance(finances, queries)
         # add the requested section to the core of the webpage
+        body = body.replace('{:PAGE:}', page)
         body = body.replace('{:BODY:}', str(text))
         return body
 
