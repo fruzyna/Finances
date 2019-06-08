@@ -2,16 +2,19 @@
     <head>
         <title>Finances</title>
         <style>
-        #options {
-            display: inline-block;
-            vertical-align: top;
-            margin-right: 3px;
-        }
         #title {
-            display: block;
+            padding: 0px;
+            padding-right: 8px;
+        }
+        #title h1 {
             margin: 0px;
             padding: 8px;
             background-color: lightblue;
+        }
+        #options {
+            vertical-align: top;
+            padding: 0px;
+            padding-right: 8px;
         }
         .option {
             display: block;
@@ -25,20 +28,14 @@
             background-color: lightyellow;
         }
 
-        #body {
-            display: inline-block;
-        }
         #header {
-            display: block;
             background-color: lightblue;
         }
-        #page {
-            display: table-cell;
+        #header h2 {
             vertical-align: middle;
             margin: 0px;
             padding: 0px;
             padding-left: 8px;
-            height: 55px;
         }
         #content {
             padding: 8px;
@@ -64,24 +61,28 @@
         </style>
     </head>
     <body>
-        <div id="options">
-            <h1 id="title">Finances</h1>
-            <span class="spacer"></span>
-            <a href="/balance" class="option">Balances</a>
-            <span class="spacer"></span>
-            <a href="/goals" class="option">Goals</a>
-            <span class="spacer"></span>
-            <a href="/add" class="option">Add</a>
-            <span class="spacer"></span>
-            <a href="/history" class="option">History</a>
-            <span class="spacer"></span>
-            <a href="/plot" class="option">Plot</a>
-        </div>
-        <div id="body">
-            <div id="header"><h2 id="page">{:PAGE:}</h2></div>
-            <div id="content">
-                {:BODY:}
-            </div>
-        </div>
+        <table id="layout" cellspacing="0">
+            <tr>
+                <td id="title"><h1>Finances</h1></td>
+                <td id="header"><h2>{:PAGE:}</h2></td>
+            </tr>
+            <tr>
+                <td id="options">
+                    <span class="spacer"></span>
+                    <a href="/balance" class="option">Balances</a>
+                    <span class="spacer"></span>
+                    <a href="/goals" class="option">Goals</a>
+                    <span class="spacer"></span>
+                    <a href="/add" class="option">Add</a>
+                    <span class="spacer"></span>
+                    <a href="/history" class="option">History</a>
+                    <span class="spacer"></span>
+                    <a href="/plot" class="option">Plot</a>
+                </td>
+                <td id="content">
+                    {:BODY:}
+                </td>
+            </tr>
+        </table>
     </body>
 </html>
