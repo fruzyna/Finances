@@ -123,11 +123,11 @@ def filter(finances, acct='', start='', end='', title='', location='', note='', 
     if end != '':
         hLog = hLog[hLog['date'] < dt.strptime(end, dateFormat)]
     if title != '':
-        hLog = hLog[hLog['title'].str.contains(title)]
+        hLog = hLog[hLog['title'].str.contains(title, case=False)]
     if location != '':
-        hLog = hLog[hLog['location'].str.contains(location)]
+        hLog = hLog[hLog['location'].str.contains(location, case=False)]
     if note != '':
-        hLog = hLog[hLog['note'].str.contains(note)]
+        hLog = hLog[hLog['note'].str.contains(note, case=False)]
     if category != '':
         hLog = hLog[hLog.apply(lambda row: determineCategory(row, finances.categories), axis=1) == category]
     if transType == 'to':

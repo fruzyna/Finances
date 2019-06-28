@@ -1,10 +1,10 @@
-import http.server, re, urllib.parse
+import http.server, re, urllib.parse, ssl
 import matplotlib.pyplot as plt
 
 from control import *
 from features import *
 
-HOST = '127.0.0.1'
+HOST = ''
 PORT = 8080
 
 def addDefaults(queries, defaults):
@@ -351,5 +351,6 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
 
 # start server
 with http.server.HTTPServer((HOST, PORT), requestHandler) as httpd:
-    print('Running server on', PORT)
+    #httpd.socket = ssl.wrap_socket(httpd.socket, keyfile='key.pem', certfile='cert.pem', server_side=True)
+    print('Running server at http://localhost:' + str(PORT))
     httpd.serve_forever()
