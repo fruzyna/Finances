@@ -73,6 +73,31 @@ def editWhole(finances, row, title, loc, date, src, to, amount, note):
     save(finances.log, finances.logFile)
     return True
 
+# command to add a new transation
+def renameAccount(finances, oldName, newName):
+    # check account names
+    oldName = correctFormat(finances, 'account', oldName, new=False)
+    newName = correctFormat(finances, 'account', newName, new=True)
+
+    usages = filter(finances, acct=oldName)
+    for index, row in usages.iterrows():
+        src = row['from']
+        if src == oldName:
+            src = newName
+        to = row['to']
+        if to == oldName:
+            to = newName
+        editEntry(finances, index, row['title'], row['location'], row['date'], src, to, row['amount'], row['note'])
+
+    for i, name in enumerate(finances.accounts):
+        if name == oldName:
+            finances.accounts[i] = newName
+
+    save(finances.log, finances.logFile)
+    with open(finances.acctFile, 'w+') as f:
+        f.write(','.join(finances.accounts))
+    return True
+
 # show last x transactions based on criteria
 def showHistory(finances, count, acct, start, end, title, loc, note, category, transType):
     # optional arguments

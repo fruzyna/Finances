@@ -266,6 +266,13 @@ def CLIedit(finances, args):
     else:
         print('Please provide a row number and column name')
 
+# command to rename an account
+def CLIrename(finances, args):
+    if 2 in args:
+        renameAccount(finances, args[1], args[2])
+    else:
+        print('Please provide an old and new account name')
+
 # plot an account's value over time
 def CLIplot(finances, args):
     # get unit of time, default is days
@@ -337,6 +344,7 @@ cmds = dict({
     'progress': (CLIgoalProgress, 'Display current monthly progress of a category goal.', 'progress category_name [month_num] [year_num]'),
     'progressMonths': (CLImonthlyGoal, 'Display goal results over the last few months.', 'progressMonths category_name [num_months] [-plot]'),
     'replace': (CLIreplaceAll, 'Replace all matching strings in a given column.', 'replace column find replace_with'),
+    'rename': (CLIrename, 'Renames an account.', 'rename old_name new_name'),
     'reset': (CLIreset, 'Resets the existing configuration.', 'reset'),
     'unique': (CLIunique, 'Gets all unique values in a given column.', 'unique column'),
     'visualHistory': (CLIvisualHistory, 'Display the last X items as a plot, default is 5.', 'visualHistory [count] [--start start_date] [--end end_date] [--cat category] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),

@@ -119,6 +119,12 @@ def WEBedit(finances, queries):
     text = '<meta http-equiv="refresh" content="0; URL=\'/history\'" />'
     return text
 
+def WEBrename(finances, queries):
+    queries = addDefaults(queries, {'oldName': '', 'newName': ''})
+    renameAccount(finances, queries['oldName'], queries['newName'])
+    text = '<meta http-equiv="refresh" content="0; URL=\'/history\'" />'
+    return text
+
 def WEBdelete(finances, queries):
     queries = addDefaults(queries, {'row': ''})
     delete(finances, queries['row'], 'y')
@@ -270,7 +276,6 @@ def WEBbalance(finances, queries):
         
     # get each accounts balance and process
     accts = ''
-    total = 0
     balances = balance(finances)
     for acct in balances:
         accts += '<tr><td>' + acct + '</td><td>' + balances[acct] + '</td></tr>'
@@ -339,6 +344,8 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
             text = WEBgoalProgress(finances, queries)
         elif path.startswith('/edit'):
             text = WEBedit(finances, queries)
+        elif path.startswith('/rename'):
+            text = WEBrename(finances, queries)
         elif path.startswith('/delete'):
             text = WEBdelete(finances, queries)
         else:
