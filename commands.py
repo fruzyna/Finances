@@ -220,17 +220,20 @@ def CLIexport(finances, args):
         fileLoc = args[1]
 
         # optional arguments
-        acct        = 'account', getOpArg(args, 'acct')
-        end         = 'date', getOpArg(args, 'end')
-        start       = 'date', getOpArg(args, 'start')
-        title       = 'title', getOpArg(args, 'title')
-        loc         = 'location', getOpArg(args, 'loc')
-        note        = 'note', getOpArg(args, 'note')
+        acct        = getOpArg(args, 'acct')
+        end         = getOpArg(args, 'end')
+        start       = getOpArg(args, 'start')
+        title       = getOpArg(args, 'title')
+        loc         = getOpArg(args, 'loc')
+        note        = getOpArg(args, 'note')
         transType   = getOpArg(args, 'transType').lower()
         
         # fetch items to export
-        count = export(finances, fileLoc, acct, start, end, title, loc, note, transType)
-        print('Exported', count, 'items to', fileLoc)
+        count, success = export(finances, fileLoc, acct, start, end, title, loc, note, transType)
+        if success:
+            print('Exported', count, 'items to', fileLoc)
+        else:
+            print('Unknown file extension')
     else:
         print('Requires at least 1 argument, the file location')
 

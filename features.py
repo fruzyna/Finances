@@ -267,23 +267,21 @@ def balance(finances):
 # exports data to a csv file
 def export(finances, fileLoc, acct, start, end, title, loc, note, transType):
     fileLoc = os.path.expanduser(fileLoc)
-    if not fileLoc.endswith('.csv'):
-        fileLoc += '.csv'
 
     # optional arguments
-    acct        = correctFormat(finances, 'account', acct)
-    start       = correctFormat(finances, 'date', start)
-    end         = correctFormat(finances, 'date', end)
-    title       = correctFormat(finances, 'title', title)
-    loc         = correctFormat(finances, 'location', loc)
-    note        = correctFormat(finances, 'note', note)
-    if not transType in ['to', 'from', 'transfer']:
+    acct    = correctFormat(finances, 'account', acct)
+    start   = correctFormat(finances, 'date', start)
+    end     = correctFormat(finances, 'date', end)
+    title   = correctFormat(finances, 'title', title)
+    loc     = correctFormat(finances, 'location', loc)
+    note    = correctFormat(finances, 'note', note)
+    if not transType in ['to', 'from', 'transfer', '']:
         raise Exception('Invalid transfer type.')
     
     # fetch items to export
     items = filter(finances, acct=acct, start=start, end=end, title=title, location=loc, note=note, transType=transType)
-    save(items, fileLoc)
-    return items.index
+    success = save(items, fileLoc)
+    return len(items.index), success
 
 # plot historical values
 def visualHistory(finances, results):

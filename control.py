@@ -374,4 +374,11 @@ def determineCategory(row, categories):
 
 # save a df to a file
 def save(log, file):
-    log.to_csv(file, index=False)
+    ext = os.path.splitext(file)[1]
+    if ext == '.csv':
+        log.to_csv(file, index=False)
+    elif ext == '.xlsx':
+        log.to_excel(file, index=False)
+    else:
+        return False
+    return True
