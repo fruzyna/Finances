@@ -285,7 +285,7 @@ def export(finances, fileLoc, acct, start, end, title, loc, note, transType):
 
 # plot historical values
 def visualHistory(finances, results):
-    fig, ax = plt.subplots()
+    _, ax = plt.subplots()
     ax = results.plot(x='date', y='amount', kind='bar', ax=ax, title='History')
     ax.set_xlabel('Transaction')
     ax.set_ylabel('Absolute Dollars')

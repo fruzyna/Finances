@@ -59,7 +59,7 @@ def WEBhistory(finances, queries, path):
     text = text.replace('{:CATS:}', cats)
 
     # search database
-    results, total = showHistory(finances, queries['results'], queries['acct'], queries['start'], queries['end'], queries['title'], queries['loc'], queries['note'], queries['cat'], queries['transType'])
+    results, _ = showHistory(finances, queries['results'], queries['acct'], queries['start'], queries['end'], queries['title'], queries['loc'], queries['note'], queries['cat'], queries['transType'])
     
     # place column names in table
     cols = '<td>row</td>'
@@ -122,7 +122,7 @@ def WEBedit(finances, queries):
 def WEBrename(finances, queries):
     queries = addDefaults(queries, {'oldName': '', 'newName': ''})
     renameAccount(finances, queries['oldName'], queries['newName'])
-    text = '<meta http-equiv="refresh" content="0; URL=\'/history\'" />'
+    text = '<meta http-equiv="refresh" content="0; URL=\'/balance\'" />'
     return text
 
 def WEBdelete(finances, queries):
@@ -137,7 +137,7 @@ def WEBadd(finances, queries):
     queries = addDefaults(queries, {'title': '', 'loc': '', 'date': dt.today().strftime(dateFormat), 'to': '', 'from': '', 'amount': '', 'note': ''})
 
     # create the row and save to file
-    success = add(finances, queries['title'], queries['loc'], queries['date'], queries['from'], queries['to'], queries['amount'], queries['note'])
+    add(finances, queries['title'], queries['loc'], queries['date'], queries['from'], queries['to'], queries['amount'], queries['note'])
 
     # redirect to a history page showing the last entry (may not be the new one)
     text = '<meta http-equiv="refresh" content="0; URL=\'/history?results=1\'" />'
@@ -257,7 +257,7 @@ def WEBgoalProgress(finances, queries):
     # get each accounts balance and process
     cats = ''
     for cat in finances.categories:
-        first, last, month, igoal, spent, sgoal, progress = goalProgress(finances, cat, '', '')
+        first, last, _, igoal, spent, sgoal, progress = goalProgress(finances, cat, '', '')
         if igoal > 0:
             cats += '<tr><td>' + cat + '</td><td>' + sgoal + '</td><td>' + spent + '</td><td>' + progress + '%</td></tr>'
         else:
@@ -267,8 +267,10 @@ def WEBgoalProgress(finances, queries):
     text += '(from ' + first + ' to ' + last + ')'
     return text
 
-def WEBbalance(finances, queries):
-    # balances tab
+def WEBbalance(finances, queries, path):
+    # balances tab 
+    queries = addDefaults(queries, {'edit': ''})
+
     # load in base balances section
     text = 'No page.'
     with open('innerHTML/balance.html', 'r') as f:
@@ -277,8 +279,11 @@ def WEBbalance(finances, queries):
     # get each accounts balance and process
     accts = ''
     balances = balance(finances)
-    for acct in balances:
-        accts += '<tr><td>' + acct + '</td><td>' + balances[acct] + '</td></tr>'
+    for i, acct in enumerate(balances):
+        if queries['edit'] == str(i):
+            accts += '<tr><form id="rename" action="/rename"><td><input type="text" name="oldName" value="' + acct + '" hidden><input type="text" name="newName" value="' + acct + '"></td><td>' + balances[acct] + '</td><td><input type="submit" value="Submit"></td></form></tr>'
+        else:
+            accts += '<tr><td>' + acct + '</td><td>' + balances[acct] + '</td><td><a href="' + path + '&edit=' + str(i) + '">rename</a></td></tr>'
     # fill in all accounts
     text = text.replace('{:ACCTS:}', accts)
     return text
@@ -350,7 +355,7 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
             text = WEBdelete(finances, queries)
         else:
             page = 'Balances'
-            text = WEBbalance(finances, queries)
+            text = WEBbalance(finances, queries, path)
         # add the requested section to the core of the webpage
         body = body.replace('{:PAGE:}', page)
         body = body.replace('{:BODY:}', str(text))
