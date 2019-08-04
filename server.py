@@ -101,7 +101,7 @@ def WEBhistory(finances, queries, path):
             rows += '<td>' + i + '</td>'
             for value in row:
                 rows += '<td>' + str(value) + '</td>'
-            rows += '<td><a href="' + path + '&edit=' + i + '">edit</a> <a href="/delete?row=' + i + '">delete</a></td>'
+            rows += '<td><a href="' + path + '?edit=' + i + '">edit</a> <a href="/delete?row=' + i + '">delete</a></td>'
         rows += '</tr>'
     text = text.replace('{:ROWS:}', rows)
 
@@ -247,8 +247,20 @@ def WEBplot(finances, queries):
     text += '<img src="plot.png">'
     return text
 
-def WEBgoalProgress(finances, queries):
+def WEBeditGoal(finances, queries):
+    # edit goal response
+    queries = addDefaults(queries, {'cat': '', 'goal': ''})
+    editGoal(finances, queries['cat'], queries['goal'])
+    text = '<meta http-equiv="refresh" content="0; URL=\'/goals\'" />'
+    return text
+
+def WEBgoalProgress(finances, queries, path):
     # goals tab
+    queries = addDefaults(queries, {'edit': '', 'delete': ''})
+
+    if queries['delete'] != '':
+        deleteCat(finances, queries['delete'], 'y')
+
     # load in base balances section
     text = 'No page.'
     with open('innerHTML/goals.html', 'r') as f:
@@ -258,10 +270,15 @@ def WEBgoalProgress(finances, queries):
     cats = ''
     for cat in finances.categories:
         first, last, _, igoal, spent, sgoal, progress = goalProgress(finances, cat, '', '')
-        if igoal > 0:
-            cats += '<tr><td>' + cat + '</td><td>' + sgoal + '</td><td>' + spent + '</td><td>' + progress + '%</td></tr>'
+        if igoal <= 0:
+            progress = 'N/A'
+            sgoal = 'No Goal'
         else:
-            cats += '<tr><td>' + cat + '</td><td>No Goal</td><td>' + spent + '</td><td></td></tr>'
+            progress += '%'
+        if queries['edit'] == cat:
+            cats += '<tr><form id="editgoal" action="/editgoal"><td><input type="text" name="cat" value="' + cat + '" readonly></td><td><input type="number" name="goal" value="' + str(igoal) + '"></td><td>' + spent + '</td><td>' + progress + '</td><td><input type="submit" value="Submit"></td></form></tr>'
+        else:
+            cats += '<tr><td>' + cat + '</td><td><a class="click" href="' + path + '?edit=' + cat + '">' + sgoal + '</a></td><td>' + spent + '</td><td>' + progress + '</td><td><a href="' + path + '?delete=' + cat + '">delete</a></td></tr>'
     # fill in all accounts
     text = text.replace('{:CATS:}', cats)
     text += '(from ' + first + ' to ' + last + ')'
@@ -283,7 +300,7 @@ def WEBbalance(finances, queries, path):
         if queries['edit'] == str(i):
             accts += '<tr><form id="rename" action="/rename"><td><input type="text" name="oldName" value="' + acct + '" hidden><input type="text" name="newName" value="' + acct + '"></td><td>' + balances[acct] + '</td><td><input type="submit" value="Submit"></td></form></tr>'
         else:
-            accts += '<tr><td><a class="click" href="' + path + '&edit=' + str(i) + '">' + acct + '</a></td><td>' + balances[acct] + '</td></tr>'
+            accts += '<tr><td><a class="click" href="' + path + '?edit=' + str(i) + '">' + acct + '</a></td><td>' + balances[acct] + '</td></tr>'
     # fill in all accounts
     text = text.replace('{:ACCTS:}', accts)
     return text
@@ -346,7 +363,9 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
             text = WEBplot(finances, queries)
         elif path.startswith('/goals'):
             page = 'Goals'
-            text = WEBgoalProgress(finances, queries)
+            text = WEBgoalProgress(finances, queries, path)
+        elif path.startswith('/editgoal'):
+            text = WEBeditGoal(finances, queries)
         elif path.startswith('/edit'):
             text = WEBedit(finances, queries)
         elif path.startswith('/rename'):

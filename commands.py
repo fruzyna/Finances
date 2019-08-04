@@ -19,10 +19,27 @@ def CLIdelete(finances, args):
         i = int(args[1])
         log = finances.log
         answer = input(' '.join(['Would you like to remove?', log.loc[i, 'title'], log.loc[i, 'location'], log.loc[i, 'to'], log.loc[i, 'from'], str(log.loc[i, 'amount']), '[y/N] ']))
-        if delete(finances, args[1], answer):
+        if delete(finances, i, answer):
             print('Item deleted')
     else:
         print('Please provide a row number')
+
+# command to delete a category
+def CLIdelCategory(finances, args):
+    if 1 in args:
+        category = correctFormat(finances, 'category', args[1], new=False)
+        answer = input(' '.join(['Would you like to remove?', category, '[y/N] ']))
+        if deleteCat(finances, category, answer):
+            print('Category deleted')
+    else:
+        print('Please provide a category')
+
+# command to edit a goal
+def CLIeditGoal(finances, args):
+    if 2 in args:
+        editGoal(finances, args[1], args[2])
+    else:
+        print('Please provide a category and new goal value')
 
 # command to add a new transation
 def CLIadd(finances, args):
@@ -332,9 +349,11 @@ cmds = dict({
     'add': (CLIadd, 'Add a new item to the log.', 'add title@location account amount [--date date] [--note note]'),
     'balance': (CLIbalance, 'Provide the balance of all accounts, as well as the total.', 'balance'),
     'bal': (CLIbalance, 'Shorter form of the balance command.', 'bal'),
+    'delCat': (CLIdelCategory, 'Deletes a given category.', 'delCat cat_name new_goal'),
     'delete': (CLIdelete, 'Remove an entry from the log.', 'delete entry_index'),
     'del': (CLIdelete, 'Shorter form of the delete command.', 'del entry_index'),
     'edit': (CLIedit, 'Edit a given value in an entry.', 'edit entry_index column'),
+    'editGoal': (CLIeditGoal, 'Edit a the goal of a category.', 'edit cat_name new_goal'),
     'export': (CLIexport, 'Export entries to a new file.', 'export log_file'),
     'help': (CLIhelpCmd, 'List and describe all command options.', 'help [command]'),
     'history': (CLIshowHistory, 'Display the last X items, default is 5.', 'history [count] [--start start_date] [--end end_date] [--acct account] [--title title] [--loc location] [--note note] [--transType to/from/transfer] [--count count]'),

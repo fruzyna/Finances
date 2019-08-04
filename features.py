@@ -22,6 +22,16 @@ def delete(finances, row, confirm):
     else:
         return False
 
+# command to delete a category/goal
+def deleteCat(finances, category, confirm):
+    category = correctFormat(finances, 'category', category, new=False)
+    if confirm.lower() == 'y':
+        finances.categories.pop(category)
+        saveCats(finances.categories, finances.catFile)
+        return True
+    else:
+        return False
+
 # command to add a new transation
 def add(finances, title, loc, date, src, to, amount, note):
     if src == '' and to == '':
@@ -218,14 +228,18 @@ def addCategory(finances, name, goal, titles, locs, accts):
     # write to file
     categories = finances.categories
     categories[name] = [goal, titles, locs, accts]
-    with open(finances.catFile, 'w+') as f:
-        for catName in categories:
-            cat = categories[catName]
-            goal    = str(cat[0])
-            titles  = cat[1]
-            locs    = cat[2]
-            accts   = cat[3]
-            f.write(catName + ',' + goal + ',' + ':'.join(titles) + ',' + ':'.join(locs) + ',' + ':'.join(accts) + '\n')
+    saveCats(categories, finances.catFile)
+    return name
+
+# edit the goal of a category
+def editGoal(finances, name, goal):
+    name    = correctFormat(finances, 'category', name, new=False)
+    goal    = correctFormat(finances, 'amount', goal)
+
+    # write to file
+    categories = finances.categories
+    categories[name] = [goal, categories[name][1], categories[name][2], categories[name][3]]
+    saveCats(categories, finances.catFile)
     return name
 
 # get basic info about an account

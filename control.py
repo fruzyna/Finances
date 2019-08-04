@@ -337,7 +337,7 @@ def correctFormat(finances, column, value, new=False):
         value = value.upper()
         if value != '-':
             if not new and not value in finances.categories:
-                raise Exception('Category, {}, does not exist in {}.'.format(value, finances.categories))
+                raise Exception('Category, {}, does not exist in {}.'.format(value, list(finances.categories.keys())))
             for c in value:
                 if not c.isalpha():
                     raise Exception('Category name must consist only of letters. {} found.'.format(c))
@@ -381,3 +381,13 @@ def save(log, file):
     else:
         return False
     return True
+
+def saveCats(categories, file):
+    with open(file, 'w+') as f:
+        for catName in categories:
+            cat = categories[catName]
+            goal    = str(cat[0])
+            titles  = cat[1]
+            locs    = cat[2]
+            accts   = cat[3]
+            f.write(catName + ',' + goal + ',' + ':'.join(titles) + ',' + ':'.join(locs) + ',' + ':'.join(accts) + '\n')
