@@ -283,7 +283,7 @@ def WEBbalance(finances, queries, path):
         if queries['edit'] == str(i):
             accts += '<tr><form id="rename" action="/rename"><td><input type="text" name="oldName" value="' + acct + '" hidden><input type="text" name="newName" value="' + acct + '"></td><td>' + balances[acct] + '</td><td><input type="submit" value="Submit"></td></form></tr>'
         else:
-            accts += '<tr><td>' + acct + '</td><td>' + balances[acct] + '</td><td><a href="' + path + '&edit=' + str(i) + '">rename</a></td></tr>'
+            accts += '<tr><td><a class="click" href="' + path + '&edit=' + str(i) + '">' + acct + '</a></td><td>' + balances[acct] + '</td></tr>'
     # fill in all accounts
     text = text.replace('{:ACCTS:}', accts)
     return text
