@@ -339,7 +339,7 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
         path = urllib.parse.unquote_plus(self.path)
         page = ''
         queries = {}
-        queryStrs = re.findall('([A-z0-9]+=[^&]+)', path)
+        queryStrs = re.findall('([A-z0-9]+=[^&?]+)', path)
         for q in queryStrs:
             key, val = q.split('=')
             if key[-1] == '?':
