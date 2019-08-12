@@ -256,7 +256,7 @@ def WEBeditGoal(finances, queries):
 
 def WEBgoalProgress(finances, queries, path):
     # goals tab
-    queries = addDefaults(queries, {'edit': '', 'delete': ''})
+    queries = addDefaults(queries, {'edit': '', 'delete': '', 'month': ''})
 
     if queries['delete'] != '':
         deleteCat(finances, queries['delete'], 'y')
@@ -265,11 +265,26 @@ def WEBgoalProgress(finances, queries, path):
     text = 'No page.'
     with open('innerHTML/goals.html', 'r') as f:
         text = f.read()
+
+    # populate dropdown with months
+    monthsStr = ''
+    months = finances.log['date'].map(lambda x: str(x.year) + '-' + ('%02d' % x.month)).sort_values(ascending=False).unique()
+    for month in months:
+        selected = ''
+        if queries['month'] == month:
+            selected = ' selected'
+        monthsStr += '<option value="' + month + '"' + selected + '>' + month + '</option>'
+    text = text.replace('{:MONTHS:}', monthsStr)
+
+    # get month and year from query
+    month = year = ''
+    if queries['month']:
+        year, month = queries['month'].split('-')
         
     # get each accounts balance and process
     cats = ''
     for cat in finances.categories:
-        first, last, _, igoal, spent, sgoal, progress = goalProgress(finances, cat, '', '')
+        first, last, _, igoal, spent, sgoal, progress = goalProgress(finances, cat, month, year)
         if igoal <= 0:
             progress = 'N/A'
             sgoal = 'No Goal'
