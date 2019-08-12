@@ -278,7 +278,7 @@ def WEBgoalProgress(finances, queries, path):
         if queries['edit'] == cat:
             cats += '<tr><form id="editgoal" action="/editgoal"><td><input type="text" name="cat" value="' + cat + '" readonly></td><td><input type="number" name="goal" value="' + str(igoal) + '"></td><td>' + spent + '</td><td>' + progress + '</td><td><input type="submit" value="Submit"></td></form></tr>'
         else:
-            cats += '<tr><td>' + cat + '</td><td><a class="click" href="' + path + '?edit=' + cat + '">' + sgoal + '</a></td><td>' + spent + '</td><td>' + progress + '</td><td><a href="' + path + '?delete=' + cat + '">delete</a></td></tr>'
+            cats += '<tr><td><a class="click" href="/history?cat=' + cat + '">' + cat + '</a></td><td><a class="click" href="' + path + '?edit=' + cat + '">' + sgoal + '</a></td><td>' + spent + '</td><td>' + progress + '</td><td><a href="' + path + '?delete=' + cat + '">delete</a></td></tr>'
     # fill in all accounts
     text = text.replace('{:CATS:}', cats)
     text += '(from ' + first + ' to ' + last + ')'
