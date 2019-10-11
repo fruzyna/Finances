@@ -36,18 +36,25 @@ def load(argDict={}):
     logFile = confDir + 'log.csv'
 
     # create config file if they don't exist
-    if not os.path.exists(confDir):
-        choice = input('No configuration exists. Would you like to link to an existing configuration directory? [y/N] ')
-        if choice.lower() == 'y':
-            to = input('Where is the existing directory: ')
-            to = os.path.expanduser(to)
-            os.symlink(to, confDir[:-1])
-        else:
-            print('Creating new configuration...')
-            os.makedirs(confDir)
+    try:
+        if not os.path.exists(confDir):
+            choice = input('No configuration exists. Would you like to link to an existing configuration directory? [y/N] ')
+            if choice.lower() == 'y':
+                to = input('Where is the existing directory: ')
+                to = os.path.expanduser(to)
+                os.symlink(to, confDir[:-1])
+                link = True
+            else:
+                print('Creating new configuration...')
+                os.makedirs(confDir)
 
-    if not os.path.exists(acctFile):
-        setupAccts(acctFile)
+        if not os.path.exists(acctFile):
+            setupAccts(acctFile)
+    except EOFError as e:
+        print(e)
+        print('Creating new configuration...')
+        os.makedirs(confDir)
+        setupAccts(acctFile, accounts=['CASH'])
 
     if not os.path.exists(catFile):
         setupCats(catFile)
@@ -83,16 +90,16 @@ def load(argDict={}):
     return Finances(confDir, accounts, categories, log)
 
 # Prompt for creating list of accounts
-def setupAccts(acctFile):
-    accounts = []
-    newAcct = ''
-    while newAcct != 'done':
-        if newAcct is not '':
-            accounts.append(newAcct)
-        newAcct = input('Enter a new account (\'done\' to finish): ')
-        if '2' in newAcct:
-            newAcct = ''
-            print('An account name cannot have \'2\' in it')
+def setupAccts(acctFile, accounts=[]):
+    if not accounts:
+        newAcct = ''
+        while newAcct != 'done':
+            if newAcct is not '':
+                accounts.append(newAcct)
+            newAcct = input('Enter a new account (\'done\' to finish): ')
+            if '2' in newAcct:
+                newAcct = ''
+                print('An account name cannot have \'2\' in it')
     with open(acctFile, 'w+') as f:
         f.write(','.join([acct.upper().replace(' ', '') for acct in accounts]))
 
