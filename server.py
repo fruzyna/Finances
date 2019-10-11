@@ -342,7 +342,7 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
     # generate web page based off url and queries
     def generate_page(self):
         # load in finance data
-        finances = load()
+        finances = load(server=True)
 
         # load in base page from file
         body = 'No page.'

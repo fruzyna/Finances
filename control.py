@@ -21,7 +21,7 @@ class Finances:
         self.log = log
 
 # Load in necessary data
-def load(argDict={}):
+def load(argDict={}, server=False):
     # use default or provided config file
     confDir = '~/.config/finance'
     if 'config' in argDict:
@@ -36,25 +36,22 @@ def load(argDict={}):
     logFile = confDir + 'log.csv'
 
     # create config file if they don't exist
-    try:
-        if not os.path.exists(confDir):
-            choice = input('No configuration exists. Would you like to link to an existing configuration directory? [y/N] ')
-            if choice.lower() == 'y':
-                to = input('Where is the existing directory: ')
-                to = os.path.expanduser(to)
-                os.symlink(to, confDir[:-1])
-                link = True
-            else:
-                print('Creating new configuration...')
-                os.makedirs(confDir)
-
-        if not os.path.exists(acctFile):
-            setupAccts(acctFile)
-    except EOFError as e:
-        print(e)
+    if server:
         print('Creating new configuration...')
         os.makedirs(confDir)
         setupAccts(acctFile, accounts=['CASH'])
+    elif not os.path.exists(confDir):
+        choice = input('No configuration exists. Would you like to link to an existing configuration directory? [y/N] ')
+        if choice.lower() == 'y':
+            to = input('Where is the existing directory: ')
+            to = os.path.expanduser(to)
+            os.symlink(to, confDir[:-1])
+        else:
+            print('Creating new configuration...')
+            os.makedirs(confDir)
+
+    if not os.path.exists(acctFile) and not server:
+        setupAccts(acctFile)
 
     if not os.path.exists(catFile):
         setupCats(catFile)
