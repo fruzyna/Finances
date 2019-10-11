@@ -1,4 +1,4 @@
-import http.server, re, urllib.parse, ssl
+import http.server, re, urllib.parse, ssl, sys
 import matplotlib.pyplot as plt
 
 from control import *
@@ -342,7 +342,7 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
     # generate web page based off url and queries
     def generate_page(self):
         # load in finance data
-        finances = load(server=True)
+        finances = load(noSetup=noSetup)
 
         # load in base page from file
         body = 'No page.'
@@ -394,6 +394,12 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
         body = body.replace('{:PAGE:}', page)
         body = body.replace('{:BODY:}', str(text))
         return body
+
+noSetup = False
+if len(sys.argv) > 1:
+    if sys.argv[1] == 'auto':
+        print("NO SETUP MODE ENABLED")
+        noSetup = True
 
 # start server
 with http.server.HTTPServer((HOST, PORT), requestHandler) as httpd:
