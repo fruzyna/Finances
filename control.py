@@ -36,7 +36,7 @@ def load(argDict={}, server=False):
     logFile = confDir + 'log.csv'
 
     # create config file if they don't exist
-    if server:
+    if server and not os.path.exists(acctFile):
         print('Creating new configuration...')
         os.makedirs(confDir)
         setupAccts(acctFile, accounts=['CASH'])
