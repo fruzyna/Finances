@@ -12,6 +12,18 @@
             background-color: lightblue;
         }
 
+        input:not([type=submit]):not([type=file]) {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            -moz-border-radius: 4px;
+            height: 34px;
+            padding-left: 8px;
+            padding-right: 8px;
+        }
+        input:not([type=submit]):not([type=file]):focus, textarea:focus {
+            border: 1px solid rgb(0, 178, 228);
+        }
+
         #options {
             vertical-align: top;
             padding: 0px;

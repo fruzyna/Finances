@@ -308,18 +308,24 @@ def editEntry(finances, row, title, loc, date, src, to, amount, note=''):
     finances.log.loc[row] = [title, loc, date, src, to, amount, note]
     return True
     
+class FormatException(Exception):
+    def __init__(self, message, column):
+        super(FormatException, self).__init__(message)
+        self.column = column
+    pass
+
 # checks that a cell is formatted correctly
 def correctFormat(finances, column, value, new=False):
     value = value.strip()
     if value == '' and not new:
         return value
     elif value == '':
-        raise Exception('{} must not be empty.'.format(column))
+        raise FormatException('"{}" must not be empty.'.format(column), column)
     elif column == 'title' or column == 'location':
         # title and location must be letters, numbers, hyphens, and apostrophes
         for c in value:
             if not c.isalpha() and not c.isdigit() and c != ' ' and c != '-' and c != '\'':
-                raise Exception('{} must consist only of letters, numbers, spaces, hyphens, and apostrophes. {} found.'.format(column, c))
+                raise FormatException('"{}" must consist only of letters, numbers, spaces, hyphens, and apostrophes. "{}" found.'.format(column, c), column)
         return value
     elif column == 'date':
         # date must be in format YYYY-MM-DD
@@ -327,34 +333,34 @@ def correctFormat(finances, column, value, new=False):
         try:
             dt.strptime(value, dateFormat)
         except ValueError:
-            raise Exception('Date must be formatted as YYYY-MM-DD.')
+            raise FormatException('Date must be formatted as YYYY-MM-DD.', 'date')
         return value
     elif column == 'from' or column == 'to' or column == 'account':
         # to and from must be a valid account and upper case
         value = value.upper()
         if value != '-':
             if not new and not value in finances.accounts:
-                raise Exception('Account, {}, does not exist in {}.'.format(value, finances.accounts))
+                raise FormatException('Account, "{}", does not exist in "{}".'.format(value, finances.accounts), column)
             for c in value:
                 if not c.isalpha():
-                    raise Exception('Account name must consist only of letters. {} found.'.format(c))
+                    raise FormatException('Account name must consist only of letters. "{}" found.'.format(c), column)
         return value
     elif column == 'category':
         # to and from must be a valid category and upper case
         value = value.upper()
         if value != '-':
             if not new and not value in finances.categories:
-                raise Exception('Category, {}, does not exist in {}.'.format(value, list(finances.categories.keys())))
+                raise FormatException('Category, "{}", does not exist in "{}".'.format(value, list(finances.categories.keys())), 'category')
             for c in value:
                 if not c.isalpha():
-                    raise Exception('Category name must consist only of letters. {} found.'.format(c))
+                    raise FormatException('Category name must consist only of letters. "{}" found.'.format(c), 'category')
         return value
     elif column == 'amount':
         # amount must be a positive 2 decimal place number
         if type(value) != 'float':
             value = float(value)
         if value < 0:
-            raise Exception('Value name must not be less than zero. {} provided.'.format(value))
+            raise FormatException('Value must not be less than zero. "{}" provided.'.format(value), 'amount')
         return value
     elif column == 'note':
         # note must be a string

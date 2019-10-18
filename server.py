@@ -1,4 +1,4 @@
-import http.server, re, urllib.parse, ssl, sys
+import http.server, re, urllib.parse, sys
 import matplotlib.pyplot as plt
 
 from control import *
@@ -134,19 +134,24 @@ def WEBdelete(finances, queries):
 def WEBadd(finances, queries):
     # request to create a new log entry
     # read queries and create defaults
-    queries = addDefaults(queries, {'title': '', 'loc': '', 'date': dt.today().strftime(dateFormat), 'to': '', 'from': '', 'amount': '', 'note': ''})
+    queries = addDefaults(queries, {'title': '', 'location': '', 'date': dt.today().strftime(dateFormat), 'to': '', 'from': '', 'amount': '', 'note': ''})
 
-    # create the row and save to file
-    add(finances, queries['title'], queries['loc'], queries['date'], queries['from'], queries['to'], queries['amount'], queries['note'])
+    try:
+        # create the row and save to file
+        add(finances, queries['title'], queries['location'], queries['date'], queries['from'], queries['to'], queries['amount'], queries['note'])
 
-    # redirect to a history page showing the last entry (may not be the new one)
-    text = '<meta http-equiv="refresh" content="0; URL=\'/history?results=1\'" />'
+        # redirect to a history page showing the last entry (may not be the new one)
+        text = '<meta http-equiv="refresh" content="0; URL=\'/history?results=1\'" />'
+    except FormatException as e:
+        # go back if there was an error
+        text = '<meta http-equiv="refresh" content="0; URL=\'/add?invalid=' + e.column + '\'" />'
+
     return text
 
 def WEBaddAccount(finances, queries):
     # request to create a new account
     # read queries and create defaults
-    queries = addDefaults(queries, {'name': ''})
+    queries = addDefaults(queries, {'name': '', 'title': '', 'location': '', 'date': dt.today().strftime(dateFormat), 'to': '', 'from': '', 'amount': '', 'note': ''})
 
     addAccount(finances, queries['name'])
         
@@ -168,9 +173,14 @@ def WEBaddCategory(finances, queries):
 def WEBaddPage(finances, queries):
     # add tab
     # load in base add section
+    queries = addDefaults(queries, {'invalid': ''})
     text = 'No page.'
     with open('innerHTML/add.html', 'r') as f:
         text = f.read()
+
+    if queries['invalid']:
+        start = text.find('name="' + queries['invalid'] + '"') + 7 + len(queries['invalid'])
+        text = text[:start] + ' style="background-color: #fcc"' + text[start:]
 
     # fill in accounts
     accts = ''
@@ -266,37 +276,41 @@ def WEBgoalProgress(finances, queries, path):
     with open('innerHTML/goals.html', 'r') as f:
         text = f.read()
 
-    # populate dropdown with months
-    monthsStr = ''
-    months = finances.log['date'].map(lambda x: str(x.year) + '-' + ('%02d' % x.month)).sort_values(ascending=False).unique()
-    for month in months:
-        selected = ''
-        if queries['month'] == month:
-            selected = ' selected'
-        monthsStr += '<option value="' + month + '"' + selected + '>' + month + '</option>'
-    text = text.replace('{:MONTHS:}', monthsStr)
+    if finances.categories:
+        # populate dropdown with months
+        monthsStr = ''
+        months = finances.log['date'].map(lambda x: str(x.year) + '-' + ('%02d' % x.month)).sort_values(ascending=False).unique()
+        for month in months:
+            selected = ''
+            if queries['month'] == month:
+                selected = ' selected'
+            monthsStr += '<option value="' + month + '"' + selected + '>' + month + '</option>'
+        text = text.replace('{:MONTHS:}', monthsStr)
 
-    # get month and year from query
-    month = year = ''
-    if queries['month']:
-        year, month = queries['month'].split('-')
-        
-    # get each accounts balance and process
-    cats = ''
-    for cat in finances.categories:
-        first, last, _, igoal, spent, sgoal, progress = goalProgress(finances, cat, month, year)
-        if igoal <= 0:
-            progress = 'N/A'
-            sgoal = 'No Goal'
-        else:
-            progress += '%'
-        if queries['edit'] == cat:
-            cats += '<tr><form id="editgoal" action="/editgoal"><td><input type="text" name="cat" value="' + cat + '" readonly></td><td><input type="number" name="goal" value="' + str(igoal) + '"></td><td>' + spent + '</td><td>' + progress + '</td><td><input type="submit" value="Submit"></td></form></tr>'
-        else:
-            cats += '<tr><td><a class="click" href="/history?cat=' + cat + '">' + cat + '</a></td><td><a class="click" href="' + path + '?edit=' + cat + '">' + sgoal + '</a></td><td>' + spent + '</td><td>' + progress + '</td><td><a href="' + path + '?delete=' + cat + '">delete</a></td></tr>'
-    # fill in all accounts
-    text = text.replace('{:CATS:}', cats)
-    text += '(from ' + first + ' to ' + last + ')'
+        # get month and year from query
+        month = year = ''
+        if queries['month']:
+            year, month = queries['month'].split('-')
+            
+        # get each accounts balance and process
+        cats = ''
+        for cat in finances.categories:
+            first, last, _, igoal, spent, sgoal, progress = goalProgress(finances, cat, month, year)
+            if igoal <= 0:
+                progress = 'N/A'
+                sgoal = 'No Goal'
+            else:
+                progress += '%'
+            if queries['edit'] == cat:
+                cats += '<tr><form id="editgoal" action="/editgoal"><td><input type="text" name="cat" value="' + cat + '" readonly></td><td><input type="number" name="goal" value="' + str(igoal) + '"></td><td>' + spent + '</td><td>' + progress + '</td><td><input type="submit" value="Submit"></td></form></tr>'
+            else:
+                cats += '<tr><td><a class="click" href="/history?cat=' + cat + '">' + cat + '</a></td><td><a class="click" href="' + path + '?edit=' + cat + '">' + sgoal + '</a></td><td>' + spent + '</td><td>' + progress + '</td><td><a href="' + path + '?delete=' + cat + '">delete</a></td></tr>'
+        # fill in all accounts
+        text = text.replace('{:CATS:}', cats)
+        text += '(from ' + first + ' to ' + last + ')'
+    else:
+        text = 'No categories found'
+    
     return text
 
 def WEBbalance(finances, queries, path):
@@ -403,6 +417,5 @@ if len(sys.argv) > 1:
 
 # start server
 with http.server.HTTPServer((HOST, PORT), requestHandler) as httpd:
-    #httpd.socket = ssl.wrap_socket(httpd.socket, keyfile='key.pem', certfile='cert.pem', server_side=True)
     print('Running server at http://localhost:' + str(PORT))
     httpd.serve_forever()
