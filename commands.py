@@ -42,7 +42,7 @@ def CLIeditGoal(finances, args):
         print('Please provide a category and new goal value')
 
 # command to add a new transation
-def CLIadd(finances, args):
+def CLIaddEntry(finances, args):
     if 3 in args:
         # manual entry
         if '@' in args[1]:
@@ -69,7 +69,7 @@ def CLIadd(finances, args):
         cost = cost[1:]
 
     # add to log
-    add(finances, title, loc, date, src, acct, cost, note)
+    addEntry(finances, title, loc, date, src, acct, cost, note)
 
 # show last x transactions based on criteria
 def CLIshowHistory(finances, args):
@@ -346,7 +346,7 @@ def unknown(finances, args):
 # dictionary of commands  
 cmds = dict({
     'acctInfo': (CLIaccountInfo, 'Display a brief summary of a given account.', 'acctInfo account [--start start_date] [--end end_date] [--months months_back]'),
-    'add': (CLIadd, 'Add a new item to the log.', 'add title@location account amount [--date date] [--note note]'),
+    'add': (CLIaddEntry, 'Add a new item to the log.', 'add title@location account amount [--date date] [--note note]'),
     'balance': (CLIbalance, 'Provide the balance of all accounts, as well as the total.', 'balance'),
     'bal': (CLIbalance, 'Shorter form of the balance command.', 'bal'),
     'delCat': (CLIdelCategory, 'Deletes a given category.', 'delCat cat_name new_goal'),

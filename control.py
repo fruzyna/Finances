@@ -298,7 +298,7 @@ def valueToString(value):
         valStr = valStr[:cIndex] + ',' + valStr[cIndex:]
     return valStr
 
-def addEntry(finances, title, loc, date, src, to, amount, note=''):
+def insertEntry(finances, title, loc, date, src, to, amount, note=''):
     # create the row
     finances.log.loc[finances.log.shape[0]] = [title, loc, date, src, to, amount, note]
     return True
@@ -316,7 +316,9 @@ class FormatException(Exception):
 
 # checks that a cell is formatted correctly
 def correctFormat(finances, column, value, new=False):
-    value = value.strip()
+    if type == str:
+        value = value.strip()
+        
     if value == '' and not new:
         return value
     elif value == '':

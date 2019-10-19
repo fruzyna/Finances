@@ -1,6 +1,7 @@
-import http.server, re, urllib.parse, sys
+import http.server, re, urllib.parse, sys, dominate
 import matplotlib.pyplot as plt
 
+from dominate.tags import *
 from control import *
 from features import *
 
@@ -13,256 +14,72 @@ def addDefaults(queries, defaults):
             queries[key] = defaults[key]
     return queries
 
-def WEBhistory(finances, queries, path):
-    # history tab
-    # read queries and create defaults
-    queries = addDefaults(queries, {'results': '5', 'title': '', 'loc': '', 'acct': '', 'amount': '', 'note': '', 'cat': '', 'start': '', 'end': '', 'transType': '', 'plot': '', 'edit': ''})
-    
-    # load in base history section
-    text = 'No page.'
-    with open('innerHTML/history.html', 'r') as f:
-        text = f.read()
+def newQuery(queries):
+    query_str = ''
+    for item in queries.items():
+        key, value = item
+        query_str += '&' + key + '=' + value
+    return query_str
 
-    # fill in blanks with text from queries
-    text = text.replace('{:RESULTS:}', queries['results'])
-    text = text.replace('{:TITLE:}', correctFormat(finances, 'title', queries['title']))
-    text = text.replace('{:LOC:}', correctFormat(finances, 'location', queries['loc']))
-    text = text.replace('{:START:}', correctFormat(finances, 'date', queries['start']))
-    text = text.replace('{:END:}', correctFormat(finances, 'date', queries['end']))
+def createQTextbox(name, queries, size=20, readonly=False):
+    return td( input_(type='text', name=name, value=queries[name], size=size, readonly=readonly, style=('background-color: #fcc' if queries['invalid'] == name else '')) )
 
-    # fill in transaction type options
-    trans = ''
-    for tt in ['', 'to', 'from', 'transfer']:
-        selected = ''
-        if tt == queries['transType']:
-            selected = ' selected="selected"'
-        trans += '<option value="' + tt + '"' + selected + '>' + tt + '</option>'
-    text = text.replace('{:TRANSTYPE:}', trans)
+def createTextbox(name, value, size=20, readonly=False):
+    return td( input_(type='text', name=name, value=value, size=size, readonly=readonly) )
 
-    # fill in accounts
-    accts = ''
-    for acct in [''] + finances.accounts:
-        selected = ''
-        if acct == queries['acct']:
-            selected = ' selected="selected"'
-        accts += '<option value="' + acct + '"' + selected + '>' + acct + '</option>'
-    text = text.replace('{:ACCTS:}', accts)
+def createQNumbox(name, queries, min='0', step='1', size=20, readonly=False):
+    return td( input_(type='number', name=name, value=queries[name], min=min, step=step, size=size, readonly=readonly, style=('background-color: #fcc' if queries['invalid'] == name else '')) )
 
-    # fill in categories
-    cats = ''
-    keys = [''] + [key for key in finances.categories] 
-    for cat in keys:
-        selected = ''
-        if cat == queries['cat']:
-            selected = ' selected="selected"'
-        cats += '<option value="' + cat + '"' + selected + '>' + cat + '</option>'
-    text = text.replace('{:CATS:}', cats)
+def createNumbox(name, value, min='0', step='1', size=20, readonly=False):
+    return td( input_(type='number', name=name, value=str(value), min=min, step=step, size=size, readonly=readonly) )
 
-    # search database
-    results, _ = showHistory(finances, queries['results'], queries['acct'], queries['start'], queries['end'], queries['title'], queries['loc'], queries['note'], queries['cat'], queries['transType'])
-    
-    # place column names in table
-    cols = '<td>row</td>'
-    for col in results.columns:
-        cols += '<td>' + col + '</td>'
-    cols += '<td>edit</td>'
-    text = text.replace('{:HEADERS:}', cols)
-    
-    # build each row of results in table
-    rows = ''
-    for i, row in results.iterrows():
-        i = str(i)
-        rows += '<tr>'
-        if i == queries['edit']:
-            rows += '<form id="edit" action="/edit">'
-            rows += '<td><input type="text" name="row" value="' + i + '" size="3" readonly></td>'
-            rows += '<td><input type="text" name="title" value="' + str(row['title']) + '"></td>'
-            rows += '<td><input type="text" name="location" value="' + str(row['location']) + '"></td>'
-            rows += '<td><input type="text" name="date" value="' + str(row['date']).split(' ')[0] + '"></td>'
-            rows += '<td><select name="from" form="edit">'
-            for acct in [''] + finances.accounts:
-                selected = ''
-                if acct == str(row['from']):
-                    selected = ' selected="selected"'
-                rows += '<option value="' + acct + '"' + selected + '>' + acct + '</option>'
-            rows += '</select></td>'
-            rows += '<td><select name="to" form="edit">'
-            for acct in [''] + finances.accounts:
-                selected = ''
-                if acct == str(row['to']):
-                    selected = ' selected="selected"'
-                rows += '<option value="' + acct + '"' + selected + '>' + acct + '</option>'
-            rows += '</select></td>'
-            rows += '<td><input type="number" name="amount" value="' + str(row['amount']) + '" min="0" step=".01"></td>'
-            rows += '<td><input type="text" name="note" value="' + str(row['note']) + '"></td>'
-            rows += '<td><input type="submit" value="Submit"></td>'
-            rows += '</form>'
-        else:
-            rows += '<td>' + i + '</td>'
-            for value in row:
-                rows += '<td>' + str(value) + '</td>'
-            rows += '<td><a href="' + path + '?edit=' + i + '">edit</a> <a href="/delete?row=' + i + '">delete</a></td>'
-        rows += '</tr>'
-    text = text.replace('{:ROWS:}', rows)
+def createQDropdown(name, form, options, queries):
+    return createDropdown(name, form, options, queries[name])
 
-    if queries['plot'] == 'on':
-        visualHistory(finances, results)
-        plt.savefig('vhist.png')
-        text += '<img src="vhist.png">'
-        text = text.replace('{:CHECKED:}', ' checked')
-    text = text.replace('{:CHECKED:}', '')
-    return text
+def createDropdown(name, form, options, selected=''):
+    dropdown = select(name=name, form=form)
+    for value in options:
+        op = option(value, selected=(value == selected)) 
+        dropdown.add(op)
+    return td(dropdown)
 
-def WEBedit(finances, queries):
-    queries = addDefaults(queries, {'title': '', 'location': '', 'date': dt.today().strftime(dateFormat), 'to': '', 'from': '', 'amount': '', 'note': '', 'row': ''})
-    editWhole(finances, queries['row'], queries['title'], queries['location'], queries['date'], queries['from'], queries['to'], queries['amount'], queries['note'])
-    text = '<meta http-equiv="refresh" content="0; URL=\'/history\'" />'
-    return text
+def createCheckbox(name, checked, text):
+    return td( input_(type='checkbox', name=name, checked=checked), text)
 
-def WEBrename(finances, queries):
-    queries = addDefaults(queries, {'oldName': '', 'newName': ''})
-    renameAccount(finances, queries['oldName'], queries['newName'])
-    text = '<meta http-equiv="refresh" content="0; URL=\'/balance\'" />'
-    return text
+def createSubmit(name):
+    return td( input_(type='submit', value=name) )
 
-def WEBdelete(finances, queries):
-    queries = addDefaults(queries, {'row': ''})
-    delete(finances, queries['row'], 'y')
-    text = '<meta http-equiv="refresh" content="0; URL=\'/history\'" />'
-    return text
+def WEBbalance(finances, queries, path):
+    # balances tab 
+    queries = addDefaults(queries, {'edit': ''})
 
-def WEBadd(finances, queries):
-    # request to create a new log entry
-    # read queries and create defaults
-    queries = addDefaults(queries, {'title': '', 'location': '', 'date': dt.today().strftime(dateFormat), 'to': '', 'from': '', 'amount': '', 'note': ''})
-
-    try:
-        # create the row and save to file
-        add(finances, queries['title'], queries['location'], queries['date'], queries['from'], queries['to'], queries['amount'], queries['note'])
-
-        # redirect to a history page showing the last entry (may not be the new one)
-        text = '<meta http-equiv="refresh" content="0; URL=\'/history?results=1\'" />'
-    except FormatException as e:
-        # go back if there was an error
-        text = '<meta http-equiv="refresh" content="0; URL=\'/add?invalid=' + e.column + '\'" />'
-
-    return text
-
-def WEBaddAccount(finances, queries):
-    # request to create a new account
-    # read queries and create defaults
-    queries = addDefaults(queries, {'name': '', 'title': '', 'location': '', 'date': dt.today().strftime(dateFormat), 'to': '', 'from': '', 'amount': '', 'note': ''})
-
-    addAccount(finances, queries['name'])
+    # create table with header/titles
+    body = table(cls='data')
+    header = tr(cls='header')
+    header.add(td('Account'))
+    header.add(td('Balance'))
+    body.add(header)
         
-    # redirect to the balances page
-    text = '<meta http-equiv="refresh" content="0; URL=\'/balance\'" />'
-    return text
-
-def WEBaddCategory(finances, queries):
-    # request to create a new category
-    # read queries and create defaults
-    queries = addDefaults(queries, {'name': '', 'goal': '', 'titles': '', 'locs': '', 'accts': ''})
-
-    name = addCategory(finances, queries['name'], queries['goal'], queries['titles'], queries['locs'], queries['accts'])
-
-    # redirect to a history page of the category
-    text = '<meta http-equiv="refresh" content="0; URL=\'/history?cat=' + name + '\'" />'
-    return text
-
-def WEBaddPage(finances, queries):
-    # add tab
-    # load in base add section
-    queries = addDefaults(queries, {'invalid': ''})
-    text = 'No page.'
-    with open('innerHTML/add.html', 'r') as f:
-        text = f.read()
-
-    if queries['invalid']:
-        start = text.find('name="' + queries['invalid'] + '"') + 7 + len(queries['invalid'])
-        text = text[:start] + ' style="background-color: #fcc"' + text[start:]
-
-    # fill in accounts
+    # get each accounts balance and process
     accts = ''
-    for acct in [''] + finances.accounts:
-        accts += '<option value="' + acct + '">' + acct + '</option>'
-    text = text.replace('{:ACCTS:}', accts)
-    return text
-
-def WEBplot(finances, queries):
-    # plot tab
-    # read queries and create defaults
-    queries = addDefaults(queries, {'units': 'days', 'acct': '', 'start': '', 'end': '', 'invert': '', 'points': '', 'noLine': '', 'allPoints': '', 'totals': ''})
-    
-    # load in base history section
-    text = 'No page.'
-    with open('innerHTML/plot.html', 'r') as f:
-        text = f.read()
-
-    # fill in blanks with text from queries
-    text = text.replace('{:START:}', correctFormat(finances, 'date', queries['start']))
-    text = text.replace('{:END:}', correctFormat(finances, 'date', queries['end']))
-
-    invert = queries['invert'] == 'on'
-    if invert:
-        text = text.replace('{:ICHECKED:}', ' checked')
-    else:
-        text = text.replace('{:ICHECKED:}', '')
-
-    points = queries['points'] == 'on'
-    if points:
-        text = text.replace('{:PCHECKED:}', ' checked')
-    else:
-        text = text.replace('{:PCHECKED:}', '')
-
-    noLine = queries['noLine'] == 'on'
-    if noLine:
-        text = text.replace('{:NCHECKED:}', ' checked')
-    else:
-        text = text.replace('{:NCHECKED:}', '')
-
-    allPoints = queries['allPoints'] == 'on'
-    if allPoints:
-        text = text.replace('{:ACHECKED:}', ' checked')
-    else:
-        text = text.replace('{:ACHECKED:}', '')
-
-    totals = queries['totals'] == 'on'
-    if totals:
-        text = text.replace('{:TCHECKED:}', ' checked')
-    else:
-        text = text.replace('{:TCHECKED:}', '')
-
-    # fill in transaction type options
-    trans = ''
-    for tt in ['days', 'weeks', 'months', 'quarters', 'years']:
-        selected = ''
-        if tt == queries['units']:
-            selected = ' selected="selected"'
-        trans += '<option value="' + tt + '"' + selected + '>' + tt + '</option>'
-    text = text.replace('{:UNITS:}', trans)
-
-    # fill in accounts
-    accts = ''
-    for acct in [''] + finances.accounts:
-        selected = ''
-        if acct == queries['acct']:
-            selected = ' selected="selected"'
-        accts += '<option value="' + acct + '"' + selected + '>' + acct + '</option>'
-    text = text.replace('{:ACCTS:}', accts)
-
-    # search database
-    plot(finances, queries['units'], queries['acct'], queries['start'], queries['end'], invert, points, noLine, allPoints, totals)
-    plt.savefig('plot.png')
-    text += '<img src="plot.png">'
-    return text
-
-def WEBeditGoal(finances, queries):
-    # edit goal response
-    queries = addDefaults(queries, {'cat': '', 'goal': ''})
-    editGoal(finances, queries['cat'], queries['goal'])
-    text = '<meta http-equiv="refresh" content="0; URL=\'/goals\'" />'
-    return text
+    balances = balance(finances)
+    for i, acct in enumerate(balances):
+        # add row to balances table
+        balRow = tr()
+        if queries['edit'] == str(i):
+            rename = form(id='rename', action='/rename')
+            nameCell = td()
+            nameCell.add( input_(type='text', name='oldName', value=acct, hidden=True) )
+            nameCell.add( input_(type='text', name='newName', value=acct) )
+            rename.add(nameCell)
+            rename.add( td(balances[acct]) )
+            rename.add( createSubmit('Save') )
+            balRow.add(rename)
+        else:
+            balRow.add( td( a(acct, cls='click', href=path+'?edit='+str(i)) ) )
+            balRow.add( td(balances[acct]) )
+        body.add(balRow)
+    return body
 
 def WEBgoalProgress(finances, queries, path):
     # goals tab
@@ -271,21 +88,32 @@ def WEBgoalProgress(finances, queries, path):
     if queries['delete'] != '':
         deleteCat(finances, queries['delete'], 'y')
 
-    # load in base balances section
-    text = 'No page.'
-    with open('innerHTML/goals.html', 'r') as f:
-        text = f.read()
+    body = div()
+
+    # create month form/dropdown
+    month = form('Month: ', id='month')
+    dropdown = select(name='month', form='month', onchange='this.form.submit()')
+    month.add(dropdown)
+    body.add(month)
+
+    # create data table
+    data = table(cls='data')
+    # create table headers/titles
+    titles = tr(cls='header')
+    titles.add( td('Account') )
+    titles.add( td('Goal') )
+    titles.add( td('Current') )
+    titles.add( td('Progress') )
+    titles.add( td('Delete') )
+    data.add(titles)
+    body.add(data)
 
     if finances.categories:
         # populate dropdown with months
         monthsStr = ''
         months = finances.log['date'].map(lambda x: str(x.year) + '-' + ('%02d' % x.month)).sort_values(ascending=False).unique()
         for month in months:
-            selected = ''
-            if queries['month'] == month:
-                selected = ' selected'
-            monthsStr += '<option value="' + month + '"' + selected + '>' + month + '</option>'
-        text = text.replace('{:MONTHS:}', monthsStr)
+            dropdown.add( option(month, value=month, selected=queries['month'] == month) )
 
         # get month and year from query
         month = year = ''
@@ -301,38 +129,320 @@ def WEBgoalProgress(finances, queries, path):
                 sgoal = 'No Goal'
             else:
                 progress += '%'
+
+            # add row to data table
+            goal = tr()
             if queries['edit'] == cat:
-                cats += '<tr><form id="editgoal" action="/editgoal"><td><input type="text" name="cat" value="' + cat + '" readonly></td><td><input type="number" name="goal" value="' + str(igoal) + '"></td><td>' + spent + '</td><td>' + progress + '</td><td><input type="submit" value="Submit"></td></form></tr>'
+                edit = tr()
+                edit.add( createTextbox('cat', cat, readonly=True) )
+                edit.add( createNumbox('goal', igoal) )
+                edit.add( td(spent) )
+                edit.add( td(progress) )
+                edit.add( createSubmit('Save') )
+                goal.add( form(edit, id='editgoal', action='/editgoal') )
             else:
-                cats += '<tr><td><a class="click" href="/history?cat=' + cat + '">' + cat + '</a></td><td><a class="click" href="' + path + '?edit=' + cat + '">' + sgoal + '</a></td><td>' + spent + '</td><td>' + progress + '</td><td><a href="' + path + '?delete=' + cat + '">delete</a></td></tr>'
-        # fill in all accounts
-        text = text.replace('{:CATS:}', cats)
-        text += '(from ' + first + ' to ' + last + ')'
+                goal.add( td( a(cat, cls='click', href='/history?cat='+cat) ) )
+                goal.add( td( a(sgoal, cls='click', href=path+'?edit='+cat) ) )
+                goal.add( td(spent))
+                goal.add( td(progress))
+                goal.add( td( a('delete', href=path+'?delete='+cat) ) )
+            data.add(goal)
+
+        body.add('(from ' + first + ' to ' + last + ')')
+        return body
     else:
-        text = 'No categories found'
+        return h3('No categories/goals found')
+
+def WEBadd(finances, queries):
+    # add tab
+    # load in base add section
+    queries = addDefaults(queries, {'invalid': '', 'entry_title': '', 'entry_location': '', 'entry_date': dt.today().strftime(dateFormat), \
+        'entry_to': '', 'entry_from': '', 'entry_amount': '', 'entry_note': '', 'account_name': '', \
+        'category_name': '', 'category_goal': '', 'category_titles': '', 'category_locations': '', 'category_accounts': ''})
+
+    body = div()
+
+    addEntry = div()
+    addEntry.add( h2('Add Entry') )
+    entry = table()
+    entryTop = tr()
+    entryTop.add( td('Title:') )
+    entryTop.add( createQTextbox('entry_title', queries) )
+    entryTop.add( td('Location:') )
+    entryTop.add( createQTextbox('entry_location', queries) )
+    entry.add(entryTop)
+    entryMid = tr()
+    entryMid.add( td('From:') )
+    entryMid.add( createQDropdown('entry_from', 'entry', [''] + finances.accounts, queries) )
+    entryMid.add( td('To:') )
+    entryMid.add( createQDropdown('entry_to', 'entry', [''] + finances.accounts, queries) )
+    entryMid.add( td('Amount:') )
+    entryMid.add( createQNumbox('entry_amount', queries, step='.01') )
+    entry.add(entryMid)
+    entryBot = tr()
+    entryBot.add( td('Date:') )
+    entryBot.add( createQTextbox('entry_date', queries, size='10') )
+    entryBot.add( td('Note:') )
+    entryBot.add( createQTextbox('entry_note', queries) )
+    entryBot.add( createSubmit('Log') )
+    entry.add(entryBot)
+    addEntry.add( form(entry, id='entry', action='/addlog') )
+    body.add(addEntry)
+
+    addCat = div()
+    addCat.add( h2('Add Category') )
+    category = table()
+    catTop = tr()
+    catTop.add( td('Name:') )
+    catTop.add( createQTextbox('category_name', queries) )
+    catTop.add( td('Goal:') )
+    catTop.add( createQNumbox('category_goal', queries) )
+    category.add(catTop)
+    catMid = tr()
+    catMid.add( td('Titles:') )
+    catMid.add( createQTextbox('category_titles', queries) )
+    catMid.add( td('Locations:') )
+    catMid.add( createQTextbox('category_locations', queries) ) 
+    category.add(catMid)
+    catBot = tr()
+    catBot.add( td('Accounts:') )
+    catBot.add( createQTextbox('category_accounts', queries) )
+    catBot.add( createSubmit('Create') )
+    category.add(catBot)
+    addCat.add( form(category, id='cat', action='/addcat') )
+    body.add(addCat)
+
+    addAcct = div()
+    addAcct.add( h2('Add Account') )
+    account = table()
+    account.add( td('Name:') )
+    account.add( createQTextbox('account_name', queries) )
+    account.add( createSubmit('Add') )
+    addAcct.add( form(account, id='acct', action='/addacct') )
+    body.add(addAcct)
+
+    return body
+
+# TODO catch exceptions
+def WEBhistory(finances, queries, path):
+    # history tab
+    # read queries and create defaults
+    queries = addDefaults(queries, {'invalid': '', 'results': '5', 'title': '', 'loc': '', 'acct': '', 'amount': '', 'note': '', 'cat': '', 'start': '', 'end': '', 'transType': '', 'plot': '', 'edit': ''})
     
-    return text
+    # load in base history section
+    options = table()
 
-def WEBbalance(finances, queries, path):
-    # balances tab 
-    queries = addDefaults(queries, {'edit': ''})
+    topRow = tr()
+    topRow.add( td('Results:') )
+    topRow.add( createQNumbox('results', queries, size='4') )
+    topRow.add( td('Title:') )
+    topRow.add( createQTextbox('title', queries) )
+    topRow.add( td('Location:') )
+    topRow.add( createQTextbox('loc', queries) )
+    options.add(topRow)
 
-    # load in base balances section
-    text = 'No page.'
-    with open('innerHTML/balance.html', 'r') as f:
-        text = f.read()
-        
-    # get each accounts balance and process
-    accts = ''
-    balances = balance(finances)
-    for i, acct in enumerate(balances):
-        if queries['edit'] == str(i):
-            accts += '<tr><form id="rename" action="/rename"><td><input type="text" name="oldName" value="' + acct + '" hidden><input type="text" name="newName" value="' + acct + '"></td><td>' + balances[acct] + '</td><td><input type="submit" value="Submit"></td></form></tr>'
+    midRow = tr()
+    midRow.add( td('Transfer Type:') )
+    midRow.add( createQDropdown('transType', 'hist', ['', 'to', 'from', 'transfer'], queries) )
+    midRow.add( td('Account:') )
+    midRow.add( createQDropdown('acct', 'hist', [''] + [key for key in finances.accounts], queries) )
+    midRow.add( td('Category:') )
+    midRow.add( createQDropdown('cat', 'hist', [''] + [key for key in finances.categories], queries) )
+    options.add(midRow)
+
+    checked = queries['plot'] == 'on'
+
+    botRow = tr()
+    botRow.add( td('Start Date:') )
+    botRow.add( createQTextbox('start', queries, size='10') )
+    botRow.add( td('EndDate:') )
+    botRow.add( createQTextbox('end', queries, size='10') )
+    botRow.add( createCheckbox('plot', checked, 'Plot?') )
+    botRow.add( createSubmit('Search') )
+    options.add(botRow)
+
+    # search database
+    results, _ = showHistory(finances, queries['results'], queries['acct'], queries['start'], queries['end'], queries['title'], queries['loc'], queries['note'], queries['cat'], queries['transType'])
+    
+    # create table for results
+    history = table(cls='data')
+    # place column names in table
+    header = tr(cls='header')
+    header.add( td('row') )
+    for col in results.columns:
+        header.add( td(col) )
+    header.add( td('edit') )
+    history.add(header)
+    
+    # build each row of results in table
+    rows = ''
+    for i, row in results.iterrows():
+        i = str(i)
+        entry = tr()
+        if i == queries['edit']:
+            edit = form(id='edit', action='/edit')
+            edit.add( createNumbox('row', i, size='3', readonly=True) )
+            edit.add( createTextbox('title', str(row['title'])) )
+            edit.add( createTextbox('location', str(row['location'])) )
+            edit.add( createTextbox('date', str(row['date']).split(' ')[0]) )
+            edit.add( createQDropdown('from', 'edit', [''] + finances.accounts, queries) )
+            edit.add( createQDropdown('to', 'edit', [''] + finances.accounts, queries) )
+            edit.add( createNumbox('amount', str(row['amount']), min='0', step='.01') )
+            edit.add( createTextbox('note', str(row['note'])) )
+            edit.add( createSubmit('Save') )
         else:
-            accts += '<tr><td><a class="click" href="' + path + '?edit=' + str(i) + '">' + acct + '</a></td><td>' + balances[acct] + '</td></tr>'
-    # fill in all accounts
-    text = text.replace('{:ACCTS:}', accts)
-    return text
+            entry.add( td(str(i)) )
+            for value in row:
+                entry.add( td(str(value)) )
+            entry.add( td( a('edit', href=path+'?edit='+i), a('delete', href='/delete?row='+i) ) )
+        history.add(entry)
+
+    if queries['plot'] == 'on':
+        visualHistory(finances, results)
+        plt.savefig('vhist.png')
+        #text += '<img src="vhist.png">'
+
+    body = div()
+    body.add(form(options, id='hist'))
+    body.add(history)
+    return body
+
+def WEBplot(finances, queries):
+    # plot tab
+    # read queries and create defaults
+    queries = addDefaults(queries, {'invalid': '', 'units': 'days', 'acct': '', 'start': '', 'end': '', 'invert': '', 'points': '', 'noLine': '', 'allPoints': '', 'totals': ''})
+    
+    options = table(id='plot')
+
+    # add row for dropdowns
+    selects = tr()
+    selects.add( td('Units:') )
+    selects.add( createQDropdown('units', 'plot-ops', ['days', 'weeks', 'months', 'quarters', 'years'], queries) )
+    selects.add( td('Account:') )
+    selects.add( createQDropdown('acct', 'plot-ops', [''] + finances.accounts, queries) )
+    options.add(selects)
+
+    # add row for dates
+    dates = tr()
+    dates.add( td('Start Date:') )
+    dates.add( createQTextbox('start', queries, size=10) )
+    dates.add( td( 'End Date:') )
+    dates.add( createQTextbox('end', queries, size=10) )
+    options.add(dates)
+
+    # check states of checks
+    invert = queries['invert'] == 'on'
+    points = queries['points'] == 'on'
+    noLine = queries['noLine'] == 'on'
+    totals = queries['totals'] == 'on'
+    allPoints = queries['allPoints'] == 'on'
+
+    # add row of checkboxes
+    checks = tr()
+    checks.add( createCheckbox('invert', invert, 'Invert Y-Axis') )
+    checks.add( createCheckbox('points', points, 'Show Points') )
+    checks.add( createCheckbox('noLine', noLine, 'Hide Line') )
+    checks.add( createCheckbox('allPoints', allPoints, 'Plot All Dates') )
+    checks.add( createCheckbox('totals', totals, 'Unit Totals') )
+    checks.add( createSubmit('Search') )
+    options.add(checks)
+
+    # search database
+    plot(finances, queries['units'], queries['acct'], queries['start'], queries['end'], invert, points, noLine, allPoints, totals)
+    plt.savefig('plot.png')
+
+    # wrap with form and add image
+    body = form(options, id='plot-ops')
+    body.add( img(src='plot.png') )
+    return body
+
+def WEBedit(finances, queries):
+    queries = addDefaults(queries, {'title': '', 'location': '', 'date': dt.today().strftime(dateFormat), 'to': '', 'from': '', 'amount': '', 'note': '', 'row': ''})
+    editWhole(finances, queries['row'], queries['title'], queries['location'], queries['date'], queries['from'], queries['to'], queries['amount'], queries['note'])
+
+    redirect = meta(content='0; URL=\'/balance\'')
+    redirect['http-equiv'] = 'refresh'
+    return redirect
+
+def WEBrename(finances, queries):
+    queries = addDefaults(queries, {'oldName': '', 'newName': ''})
+    renameAccount(finances, queries['oldName'], queries['newName'])
+
+    redirect = meta(content='0; URL=\'/balance\'')
+    redirect['http-equiv'] = 'refresh'
+    return redirect
+
+def WEBdelete(finances, queries):
+    queries = addDefaults(queries, {'row': ''})
+    delete(finances, queries['row'], 'y')
+
+    redirect = meta(content='0; URL=\'/history\'')
+    redirect['http-equiv'] = 'refresh'
+    return redirect
+
+def WEBaddEntry(finances, queries):
+    # request to create a new log entry
+    # read queries and create defaults
+    queries = addDefaults(queries, {'entry_title': '', 'entry_location': '', 'entry_date': dt.today().strftime(dateFormat), 'entry_to': '', 'entry_from': '', 'entry_amount': '', 'entry_note': ''})
+
+    try:
+        # create the row and save to file
+        addEntry(finances, queries['entry_title'], queries['entry_location'], queries['entry_date'], queries['entry_from'], queries['entry_to'], queries['entry_amount'], queries['entry_note'])
+
+        # redirect to a history page showing the last entry (may not be the new one)
+        redirect = meta(content='0; URL=\'/history?results=1\'')
+        redirect['http-equiv'] = 'refresh'
+        return redirect
+    except FormatException as e:
+        # go back if there was an error
+        redirect = meta(content='0; URL=\'/add?invalid=entry_' + e.column + newQuery(queries) + '\'')
+        redirect['http-equiv'] = 'refresh'
+        return redirect
+
+def WEBaddAccount(finances, queries):
+    # request to create a new account
+    # read queries and create defaults
+    queries = addDefaults(queries, {'account_name': ''})
+
+    try:
+        addAccount(finances, queries['account_name'])
+            
+        # redirect to the balances page
+        redirect = meta(content='0; URL=\'/balance\'')
+        redirect['http-equiv'] = 'refresh'
+        return redirect
+    except FormatException as e:
+        # go back if there was an error
+        redirect = meta(content='0; URL=\'/add?invalid=account_name&account_name=' + queries['account_name'] +  '\'')
+        redirect['http-equiv'] = 'refresh'
+        return redirect
+
+def WEBaddCategory(finances, queries):
+    # request to create a new category
+    # read queries and create defaults
+    queries = addDefaults(queries, {'category_name': '', 'category_goal': '', 'category_titles': '', 'category_locations': '', 'category_accounts': ''})
+
+    try:
+        name = addCategory(finances, queries['category_name'], queries['category_goal'], queries['category_titles'], queries['category_locations'], queries['category_accounts'])
+
+        # redirect to a history page of the category
+        redirect = meta(content='0; URL=\'/history?cat=' + name + '\'')
+        redirect['http-equiv'] = 'refresh'
+        return redirect
+    except FormatException as e:
+        # go back if there was an error
+        redirect = meta(content='0; URL=\'/add?invalid=category_' + e.column + newQuery(queries) + '\'')
+        redirect['http-equiv'] = 'refresh'
+        return redirect
+
+def WEBeditGoal(finances, queries):
+    # edit goal response
+    queries = addDefaults(queries, {'cat': '', 'goal': ''})
+    editGoal(finances, queries['cat'], queries['goal'])
+
+    redirect = meta(content='0; URL=\'/goals\'')
+    redirect['http-equiv'] = 'refresh'
+    return redirect
 
 class requestHandler(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
@@ -358,15 +468,36 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
         # load in finance data
         finances = load(noSetup=noSetup)
 
-        # load in base page from file
-        body = 'No page.'
-        with open('base.html', 'r') as f:
-            body = f.read()
+        # core page
+        page = dominate.document(title='Finances')
+        #page.head.add(link(rel='stylesheet', href='style.css'))
+        with open('style.css', 'r') as f:
+            page.head.add(style(f.read()))
 
-        text = ''
+        # main table
+        ttable = table(id='layout', cellspacing='0')
+        page.add(ttable)
+
+        # top table row
+        headerRow = tr()
+        headerRow.add( td( h1('Finances'), id='title' ) )
+        ttable.add(headerRow)
+
+        # bottom table row
+        bodyRow = tr()
+        ttable.add(bodyRow)
+
+        # left menu cell
+        menuCell = td(id='options')
+        menuCell.add( a('Balances', href='/balance', cls='option') )
+        menuCell.add( a('Goals', href='/goals', cls='option') )
+        menuCell.add( a('Add', href='/add', cls='option') )
+        menuCell.add( a('History', href='/history', cls='option') )
+        menuCell.add( a('Plot', href='/plot', cls='option') )
+        bodyRow.add(menuCell)
+
         # remove encoding from url
         path = urllib.parse.unquote_plus(self.path)
-        page = ''
         queries = {}
         queryStrs = re.findall('([A-z0-9]+=[^&?]+)', path)
         for q in queryStrs:
@@ -374,40 +505,47 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
             if key[-1] == '?':
                 key = key[:-1]
             queries[key] = val
-        page = ''
+        
+        # right body cell
+        body = div()
+        pageName = ''
         if path.startswith('/history'):
-            page = 'History'
-            text = WEBhistory(finances, queries, path)
+            pageName = 'History'
+            body = WEBhistory(finances, queries, path)
         elif path.startswith('/addlog'):
-            text = WEBadd(finances, queries)
+            body = WEBaddEntry(finances, queries)
         elif path.startswith('/addacct'):
-            text = WEBaddAccount(finances, queries)
+            body = WEBaddAccount(finances, queries)
         elif path.startswith('/addcat'):
-            text = WEBaddCategory(finances, queries)
+            body = WEBaddCategory(finances, queries)
         elif path.startswith('/add'):
-            page = 'Add'
-            text = WEBaddPage(finances, queries)
+            pageName = 'Add'
+            body = WEBadd(finances, queries)
         elif path.startswith('/plot'):
-            page = 'Plot'
-            text = WEBplot(finances, queries)
+            pageName = 'Plot'
+            body = WEBplot(finances, queries)
         elif path.startswith('/goals'):
-            page = 'Goals'
-            text = WEBgoalProgress(finances, queries, path)
+            pageName = 'Goals'
+            body = WEBgoalProgress(finances, queries, path)
         elif path.startswith('/editgoal'):
-            text = WEBeditGoal(finances, queries)
+            body = WEBeditGoal(finances, queries)
         elif path.startswith('/edit'):
-            text = WEBedit(finances, queries)
+            body = WEBedit(finances, queries)
         elif path.startswith('/rename'):
-            text = WEBrename(finances, queries)
+            body = WEBrename(finances, queries)
         elif path.startswith('/delete'):
-            text = WEBdelete(finances, queries)
+            body = WEBdelete(finances, queries)
+        elif path.startswith('/style.css'):
+            with open('style.css', 'r') as f:
+                return f.read()
         else:
-            page = 'Balances'
-            text = WEBbalance(finances, queries, path)
-        # add the requested section to the core of the webpage
-        body = body.replace('{:PAGE:}', page)
-        body = body.replace('{:BODY:}', str(text))
-        return body
+            pageName = 'Balances'
+            body = WEBbalance(finances, queries, path)
+            
+        headerRow.add( td( h2(pageName, id='pageName'), id='header') )
+        bodyRow.add( td(body, id='content') )
+
+        return str(page)
 
 noSetup = False
 if len(sys.argv) > 1:

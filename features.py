@@ -33,9 +33,9 @@ def deleteCat(finances, category, confirm):
         return False
 
 # command to add a new transation
-def add(finances, title, loc, date, src, to, amount, note):
+def addEntry(finances, title, loc, date, src, to, amount, note):
     if src == '' and to == '':
-        return False
+        raise FormatException('Entry must have an account associated.', 'from')
     elif src == '':
         src = '-'
     elif to == '':
@@ -53,7 +53,7 @@ def add(finances, title, loc, date, src, to, amount, note):
     note    = correctFormat(finances, 'note', note)
 
     # add to log and save
-    addEntry(finances, title, loc, date, src, to, amount, note)
+    insertEntry(finances, title, loc, date, src, to, amount, note)
     save(finances.log, finances.logFile)
     return True
 

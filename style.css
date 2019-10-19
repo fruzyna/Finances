@@ -1,0 +1,70 @@
+#title {
+    padding: 0px;
+    padding-right: 8px;
+}
+#title h1 {
+    margin: 0px;
+    padding: 8px;
+    background-color: lightblue;
+}
+
+input:not([type=submit]):not([type=file]) {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    -moz-border-radius: 4px;
+    height: 34px;
+    padding-left: 8px;
+    padding-right: 8px;
+}
+input:not([type=submit]):not([type=file]):focus, textarea:focus {
+    border: 1px solid rgb(0, 178, 228);
+}
+
+#options {
+    vertical-align: top;
+    padding: 0px;
+    padding-right: 8px;
+}
+.option {
+    display: block;
+    background-color: lightblue;
+    padding: 8px;
+    margin-top: 8px;
+    color: black;
+    text-decoration: none;
+}
+.option:hover {
+    background-color: lightyellow;
+}
+
+#header {
+    background-color: lightblue;
+}
+#header h2 {
+    vertical-align: middle;
+    margin: 0px;
+    padding: 0px;
+    padding-left: 8px;
+}
+
+#content {
+    padding: 8px;
+}
+
+.header {
+    font-weight: bold;
+}
+td {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+.data tr td:nth-child(odd){ 
+    background: #eeeeee;
+}
+.data tr td:nth-child(even){
+    background: #dddddd;
+}
+.click {
+    text-decoration: none;
+    color: black;
+}
