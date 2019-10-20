@@ -51,7 +51,7 @@ def createSubmit(name):
 
 def WEBbalance(finances, queries, path):
     # balances tab 
-    queries = addDefaults(queries, {'edit': ''})
+    queries = addDefaults(queries, {'invalid': '', 'edit_account': '', 'new_account': ''})
 
     # create table with header/titles
     body = table(cls='data')
@@ -63,20 +63,20 @@ def WEBbalance(finances, queries, path):
     # get each accounts balance and process
     accts = ''
     balances = balance(finances)
-    for i, acct in enumerate(balances):
+    for acct in balances:
         # add row to balances table
         balRow = tr()
-        if queries['edit'] == str(i):
+        if queries['edit_account'] == acct:
             rename = form(id='rename', action='/rename')
             nameCell = td()
-            nameCell.add( input_(type='text', name='oldName', value=acct, hidden=True) )
-            nameCell.add( input_(type='text', name='newName', value=acct) )
+            nameCell.add( input_(type='text', name='edit_account', value=acct, hidden=True) )
+            nameCell.add( input_(type='text', name='new_account', value=(queries['new_account'] if queries['new_account'] else acct), style=('background-color: #fcc' if queries['invalid'] == 'new_account' else '')) )
             rename.add(nameCell)
             rename.add( td(balances[acct]) )
             rename.add( createSubmit('Save') )
             balRow.add(rename)
         else:
-            balRow.add( td( a(acct, cls='click', href=path+'?edit='+str(i)) ) )
+            balRow.add( td( a(acct, cls='click', href=path+'?edit_account='+acct) ) )
             balRow.add( td(balances[acct]) )
         body.add(balRow)
     return body
@@ -364,13 +364,19 @@ def WEBedit(finances, queries):
     redirect['http-equiv'] = 'refresh'
     return redirect
 
-def WEBrename(finances, queries):
-    queries = addDefaults(queries, {'oldName': '', 'newName': ''})
-    renameAccount(finances, queries['oldName'], queries['newName'])
+def WEBrenameAccount(finances, queries):
+    queries = addDefaults(queries, {'edit_account': '', 'new_account': ''})
 
-    redirect = meta(content='0; URL=\'/balance\'')
-    redirect['http-equiv'] = 'refresh'
-    return redirect
+    try:
+        renameAccount(finances, queries['edit_account'], queries['new_account'])
+
+        redirect = meta(content='0; URL=\'/balance\'')
+        redirect['http-equiv'] = 'refresh'
+        return redirect
+    except FormatException as e:
+        redirect = meta(content='0; URL=\'/balance?invalid=new_account' + newQuery(queries) + '\'')
+        redirect['http-equiv'] = 'refresh'
+        return redirect
 
 def WEBdelete(finances, queries):
     queries = addDefaults(queries, {'row': ''})
@@ -532,7 +538,7 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
         elif path.startswith('/edit'):
             body = WEBedit(finances, queries)
         elif path.startswith('/rename'):
-            body = WEBrename(finances, queries)
+            body = WEBrenameAccount(finances, queries)
         elif path.startswith('/delete'):
             body = WEBdelete(finances, queries)
         elif path.startswith('/style.css'):
