@@ -141,7 +141,7 @@ def WEBgoalProgress(finances, queries, path):
                 edit.add( createSubmit('Save') )
                 goal.add( form(edit, id='editgoal', action='/editgoal') )
             else:
-                goal.add( td( a(cat, cls='click', href='/history?cat='+cat) ) )
+                goal.add( td( a(cat, cls='click', href='/history?search_category='+cat) ) )
                 goal.add( td( a(sgoal, cls='click', href=path+'?edit='+cat) ) )
                 goal.add( td(spent))
                 goal.add( td(progress))
@@ -158,7 +158,7 @@ def WEBadd(finances, queries):
     # load in base add section
     queries = addDefaults(queries, {'invalid': '', 'entry_title': '', 'entry_location': '', 'entry_date': dt.today().strftime(dateFormat), \
         'entry_to': '', 'entry_from': '', 'entry_amount': '', 'entry_note': '', 'account_name': '', \
-        'category_name': '', 'category_goal': '', 'category_titles': '', 'category_locations': '', 'category_accounts': ''})
+        'category_category': '', 'category_amount': '', 'category_title': '', 'category_location': '', 'category_account': ''})
 
     body = div()
 
@@ -194,19 +194,19 @@ def WEBadd(finances, queries):
     category = table()
     catTop = tr()
     catTop.add( td('Name:') )
-    catTop.add( createQTextbox('category_name', queries) )
+    catTop.add( createQTextbox('category_category', queries) )
     catTop.add( td('Goal:') )
-    catTop.add( createQNumbox('category_goal', queries) )
+    catTop.add( createQNumbox('category_amount', queries) )
     category.add(catTop)
     catMid = tr()
     catMid.add( td('Titles:') )
-    catMid.add( createQTextbox('category_titles', queries) )
+    catMid.add( createQTextbox('category_title', queries) )
     catMid.add( td('Locations:') )
-    catMid.add( createQTextbox('category_locations', queries) ) 
+    catMid.add( createQTextbox('category_location', queries) ) 
     category.add(catMid)
     catBot = tr()
     catBot.add( td('Accounts:') )
-    catBot.add( createQTextbox('category_accounts', queries) )
+    catBot.add( createQTextbox('category_account', queries) )
     catBot.add( createSubmit('Create') )
     category.add(catBot)
     addCat.add( form(category, id='cat', action='/addcat') )
@@ -429,7 +429,7 @@ def WEBaddEntry(finances, queries):
         addEntry(finances, queries['entry_title'], queries['entry_location'], queries['entry_date'], queries['entry_from'], queries['entry_to'], queries['entry_amount'], queries['entry_note'])
 
         # redirect to a history page showing the last entry (may not be the new one)
-        redirect = meta(content='0; URL=\'/history?results=1\'')
+        redirect = meta(content='0; URL=\'/history?search_results=1&search_title=' + queries['entry_title'] + '&search_location=' + queries['entry_location'] + '\'')
         redirect['http-equiv'] = 'refresh'
         return redirect
     except FormatException as e:
@@ -459,13 +459,13 @@ def WEBaddAccount(finances, queries):
 def WEBaddCategory(finances, queries):
     # request to create a new category
     # read queries and create defaults
-    queries = addDefaults(queries, {'category_name': '', 'category_goal': '', 'category_titles': '', 'category_locations': '', 'category_accounts': ''})
+    queries = addDefaults(queries, {'category_category': '', 'category_amount': '', 'category_title': '', 'category_location': '', 'category_account': ''})
 
     try:
-        name = addCategory(finances, queries['category_name'], queries['category_goal'], queries['category_titles'], queries['category_locations'], queries['category_accounts'])
+        name = addCategory(finances, queries['category_category'], queries['category_amount'], queries['category_title'], queries['category_location'], queries['category_account'])
 
         # redirect to a history page of the category
-        redirect = meta(content='0; URL=\'/history?cat=' + name + '\'')
+        redirect = meta(content='0; URL=\'/history?search_category=' + name + '\'')
         redirect['http-equiv'] = 'refresh'
         return redirect
     except FormatException as e:
