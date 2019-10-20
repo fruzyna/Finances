@@ -18,7 +18,7 @@ def newQuery(queries):
     query_str = ''
     for item in queries.items():
         key, value = item
-        query_str += '&' + key + '=' + value
+        query_str += '&' + key + '=' + str(value)
     return query_str
 
 def createQTextbox(name, queries, size=20, readonly=False):
@@ -227,43 +227,57 @@ def WEBadd(finances, queries):
 def WEBhistory(finances, queries, path):
     # history tab
     # read queries and create defaults
-    queries = addDefaults(queries, {'invalid': '', 'results': '5', 'title': '', 'loc': '', 'acct': '', 'amount': '', 'note': '', 'cat': '', 'start': '', 'end': '', 'transType': '', 'plot': '', 'edit': ''})
+    queries = addDefaults(queries, {'invalid': '', 'search_results': '5', 'search_title': '', 'search_location': '', 'search_account': '', 'search_amount': '', \
+        'search_note': '', 'search_category': '', 'search_start': '', 'search_end': '', 'search_transType': '', 'search_plot': '', 'edit_row': '', \
+        'edit_title': '', 'edit_location': '', 'edit_date': '', 'edit_to': '', \
+        'edit_from': '', 'edit_amount': '', 'edit_note': '', 'edit_row': ''})
     
     # load in base history section
     options = table()
 
+    # search database
+    try:
+        results, _ = showHistory(finances, queries['search_results'], queries['search_account'], queries['search_start'], queries['search_end'], \
+            queries['search_title'], queries['search_location'], queries['search_note'], queries['search_category'], queries['search_transType'])
+    except FormatException as e:
+        if e.column == 'date':
+            queries['invalid'] = 'search_start'
+        else:
+            queries['invalid'] = 'search_' + e.column
+        results, _ = showHistory(finances, 5, '', '', '', '', '', '', '', '')
+
+    # create top row of search options
     topRow = tr()
     topRow.add( td('Results:') )
-    topRow.add( createQNumbox('results', queries, size='4') )
+    topRow.add( createQNumbox('search_results', queries, size='4') )
     topRow.add( td('Title:') )
-    topRow.add( createQTextbox('title', queries) )
+    topRow.add( createQTextbox('search_title', queries) )
     topRow.add( td('Location:') )
-    topRow.add( createQTextbox('loc', queries) )
+    topRow.add( createQTextbox('search_location', queries) )
     options.add(topRow)
 
+    # create middle row of search options
     midRow = tr()
     midRow.add( td('Transfer Type:') )
-    midRow.add( createQDropdown('transType', 'hist', ['', 'to', 'from', 'transfer'], queries) )
+    midRow.add( createQDropdown('search_transType', 'hist', ['', 'to', 'from', 'transfer'], queries) )
     midRow.add( td('Account:') )
-    midRow.add( createQDropdown('acct', 'hist', [''] + [key for key in finances.accounts], queries) )
+    midRow.add( createQDropdown('search_account', 'hist', [''] + [key for key in finances.accounts], queries) )
     midRow.add( td('Category:') )
-    midRow.add( createQDropdown('cat', 'hist', [''] + [key for key in finances.categories], queries) )
+    midRow.add( createQDropdown('search_category', 'hist', [''] + [key for key in finances.categories], queries) )
     options.add(midRow)
 
-    checked = queries['plot'] == 'on'
+    checked = queries['search_plot'] == 'on'
 
+    # create bottom row of search options
     botRow = tr()
     botRow.add( td('Start Date:') )
-    botRow.add( createQTextbox('start', queries, size='10') )
+    botRow.add( createQTextbox('search_start', queries, size='10') )
     botRow.add( td('EndDate:') )
-    botRow.add( createQTextbox('end', queries, size='10') )
-    botRow.add( createCheckbox('plot', checked, 'Plot?') )
+    botRow.add( createQTextbox('search_end', queries, size='10') )
+    botRow.add( createCheckbox('search_plot', checked, 'Plot?') )
     botRow.add( createSubmit('Search') )
     options.add(botRow)
 
-    # search database
-    results, _ = showHistory(finances, queries['results'], queries['acct'], queries['start'], queries['end'], queries['title'], queries['loc'], queries['note'], queries['cat'], queries['transType'])
-    
     # create table for results
     history = table(cls='data')
     # place column names in table
@@ -279,25 +293,35 @@ def WEBhistory(finances, queries, path):
     for i, row in results.iterrows():
         i = str(i)
         entry = tr()
-        if i == queries['edit']:
-            edit = form(id='edit', action='/edit')
-            edit.add( createNumbox('row', i, size='3', readonly=True) )
-            edit.add( createTextbox('title', str(row['title'])) )
-            edit.add( createTextbox('location', str(row['location'])) )
-            edit.add( createTextbox('date', str(row['date']).split(' ')[0]) )
-            edit.add( createQDropdown('from', 'edit', [''] + finances.accounts, queries) )
-            edit.add( createQDropdown('to', 'edit', [''] + finances.accounts, queries) )
-            edit.add( createNumbox('amount', str(row['amount']), min='0', step='.01') )
-            edit.add( createTextbox('note', str(row['note'])) )
+        if i == queries['edit_row']:
+            # fill query with current values
+            for key, value in row.iteritems():
+                if queries['edit_' + key] == '':
+                    if key == 'date':
+                        value = str(value).split(' ')[0]
+                    queries['edit_' + key] = value
+
+            edit = form(id='edit', action='/editentry')
+            edit.add( createNumbox('edit_row', i, size='3', readonly=True) )
+            edit.add( createQTextbox('edit_title', queries) )
+            edit.add( createQTextbox('edit_location', queries) )
+            edit.add( createQTextbox('edit_date', queries) )
+            edit.add( createQDropdown('edit_from', 'edit', [''] + finances.accounts, queries) )
+            edit.add( createQDropdown('edit_to', 'edit', [''] + finances.accounts, queries) )
+            edit.add( createQNumbox('edit_amount', queries, min='0', step='.01') )
+            edit.add( createQTextbox('edit_note', queries) )
             edit.add( createSubmit('Save') )
+            entry.add(edit)
         else:
             entry.add( td(str(i)) )
             for value in row:
                 entry.add( td(str(value)) )
-            entry.add( td( a('edit', href=path+'?edit='+i), a('delete', href='/delete?row='+i) ) )
+            editQ = queries.copy()
+            editQ['edit_row'] = i
+            entry.add( td( a('edit', href='/history' + newQuery(editQ)), a('delete', href='/delete?row='+i) ) )
         history.add(entry)
 
-    if queries['plot'] == 'on':
+    if checked:
         visualHistory(finances, results)
         plt.savefig('vhist.png')
         #text += '<img src="vhist.png">'
@@ -356,13 +380,22 @@ def WEBplot(finances, queries):
     body.add( img(src='plot.png') )
     return body
 
-def WEBedit(finances, queries):
-    queries = addDefaults(queries, {'title': '', 'location': '', 'date': dt.today().strftime(dateFormat), 'to': '', 'from': '', 'amount': '', 'note': '', 'row': ''})
-    editWhole(finances, queries['row'], queries['title'], queries['location'], queries['date'], queries['from'], queries['to'], queries['amount'], queries['note'])
+def WEBeditEntry(finances, queries):
+    queries = addDefaults(queries, {'edit_title': '', 'edit_location': '', 'edit_date': dt.today().strftime(dateFormat), 'edit_to': '', \
+        'edit_from': '', 'edit_amount': '', 'edit_note': '', 'edit_row': ''})
 
-    redirect = meta(content='0; URL=\'/balance\'')
-    redirect['http-equiv'] = 'refresh'
-    return redirect
+    try:
+        editWhole(finances, queries['edit_row'], queries['edit_title'], queries['edit_location'], queries['edit_date'], queries['edit_from'], \
+            queries['edit_to'], queries['edit_amount'], queries['edit_note'])
+
+        redirect = meta(content='0; URL=\'/balance\'')
+        redirect['http-equiv'] = 'refresh'
+        return redirect
+    except FormatException as e:
+        # go back if there was an error
+        redirect = meta(content='0; URL=\'/history?invalid=edit_' + e.column + newQuery(queries) + '\'')
+        redirect['http-equiv'] = 'refresh'
+        return redirect
 
 def WEBrenameAccount(finances, queries):
     queries = addDefaults(queries, {'edit_account': '', 'new_account': ''})
@@ -535,8 +568,8 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
             body = WEBgoalProgress(finances, queries, path)
         elif path.startswith('/editgoal'):
             body = WEBeditGoal(finances, queries)
-        elif path.startswith('/edit'):
-            body = WEBedit(finances, queries)
+        elif path.startswith('/editentry'):
+            body = WEBeditEntry(finances, queries)
         elif path.startswith('/rename'):
             body = WEBrenameAccount(finances, queries)
         elif path.startswith('/delete'):
