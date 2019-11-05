@@ -9,6 +9,7 @@ from server.utils import *
 
 HOST = ''
 PORT = 8080
+FINANCES_VERSION = '2019-11-05-about'
 
 def WEBbalance(finances, queries, path):
     # balances tab 
@@ -341,6 +342,15 @@ def WEBplot(finances, queries):
     body.add( img(src='plot.png') )
     return body
 
+def WEBabout(finances, queries):
+    # about tab
+    body = div()
+    body.add( h2('Finances by Liam Fruzyna') )
+    body.add( p('Version: ' + FINANCES_VERSION) )
+    body.add( p('2019 Liam Fruzyna, MIT Licensed') )
+    body.add( a('View source on GitHub', href='https://github.com/mail929/Finances'))
+    return body
+
 def WEBeditEntry(finances, queries):
     queries = addDefaults(queries, {'edit_title': '', 'edit_location': '', 'edit_date': datetime.today().strftime(dateFormat), 'edit_to': '', \
         'edit_from': '', 'edit_amount': '', 'edit_note': '', 'edit_row': ''})
@@ -494,6 +504,7 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
         menuCell.add( a('Add', href='/add', cls='option') )
         menuCell.add( a('History', href='/history', cls='option') )
         menuCell.add( a('Plot', href='/plot', cls='option') )
+        menuCell.add( a('About', href='/about', cls='option') )
         bodyRow.add(menuCell)
 
         # remove encoding from url
@@ -535,6 +546,9 @@ class requestHandler(http.server.BaseHTTPRequestHandler):
             body = WEBrenameAccount(finances, queries)
         elif path.startswith('/delete'):
             body = WEBdelete(finances, queries)
+        elif path.startswith('/about'):
+            pageName = 'About'
+            body = WEBabout(finances, queries)
         elif path.startswith('/style.css'):
             with open('style.css', 'r') as f:
                 return f.read()
