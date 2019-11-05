@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+import datetime
 from datetime import datetime as dt
 from calendar import monthrange
 
@@ -307,6 +308,19 @@ def editEntry(finances, row, title, loc, date, src, to, amount, note=''):
     # create the row
     finances.log.loc[row] = [title, loc, date, src, to, amount, note]
     return True
+
+def customDate(dateStr):
+    dateStr = dateStr.lower()
+    date = dt.today()
+    if dateStr == 'yesterday':
+        date -= datetime.timedelta(1)
+    elif dateStr == 'today':
+        date = date
+    elif dateStr == 'tomorrow':
+        date += datetime.timedelta(1)
+    else:
+        return False
+    return date.strftime(dateFormat)
     
 class FormatException(Exception):
     def __init__(self, message, column):
@@ -330,13 +344,17 @@ def correctFormat(finances, column, value, new=False):
                 raise FormatException('"{}" must consist only of letters, numbers, spaces, hyphens, and apostrophes. "{}" found.'.format(column, c), column)
         return value
     elif column == 'date':
-        # date must be in format YYYY-MM-DD
-        value = value.replace('/', '-')
-        try:
-            dt.strptime(value, dateFormat)
-        except ValueError:
-            raise FormatException('Date must be formatted as YYYY-MM-DD.', 'date')
-        return value
+        custom = customDate(value)
+        if custom:
+            return custom
+        else:
+            # date must be in format YYYY-MM-DD
+            value = value.replace('/', '-')
+            try:
+                dt.strptime(value, dateFormat)
+            except ValueError:
+                raise FormatException('Date must be formatted as YYYY-MM-DD.', 'date')
+            return value
     elif column == 'from' or column == 'to' or column == 'account':
         # to and from must be a valid account and upper case
         value = value.upper()
