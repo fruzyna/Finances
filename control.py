@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
-from datetime import datetime as dt
+from datetime import timedelta, datetime
 from calendar import monthrange
 
 #
@@ -125,9 +125,9 @@ def filter(finances, acct='', start='', end='', title='', location='', note='', 
     if acct != '':
         hLog = hLog[(hLog['from'] == acct) | (hLog['to'] == acct)]
     if start != '':
-        hLog = hLog[hLog['date'] >= dt.strptime(start, dateFormat)]
+        hLog = hLog[hLog['date'] >= datetime.strptime(start, dateFormat)]
     if end != '':
-        hLog = hLog[hLog['date'] < dt.strptime(end, dateFormat)]
+        hLog = hLog[hLog['date'] < datetime.strptime(end, dateFormat)]
     if title != '':
         hLog = hLog[hLog['title'].str.contains(title, case=False)]
     if location != '':
@@ -157,9 +157,9 @@ def getAccountInfo(finances, account, start='', end=''):
 
     # filter by date (optional)
     if start != '':
-        cLog = cLog[cLog['date'] >= dt.strptime(start, dateFormat)]
+        cLog = cLog[cLog['date'] >= datetime.strptime(start, dateFormat)]
     if end != '':
-        cLog = cLog[cLog['date'] < dt.strptime(end, dateFormat)]
+        cLog = cLog[cLog['date'] < datetime.strptime(end, dateFormat)]
 
     # get all items
     tos = cLog[cLog['to'] == account]
@@ -244,8 +244,8 @@ def totalsPerUnitTime(finances, units, acct='', start='', end='', category=''):
 
 # get the progress of a category goal for a month
 def getMonthProgress(finances, catName, month, year):
-    first = dt(year, month, 1).strftime(dateFormat)
-    last = dt(year, month, monthrange(year, month)[1]).strftime(dateFormat)
+    first = datetime(year, month, 1).strftime(dateFormat)
+    last = datetime(year, month, monthrange(year, month)[1]).strftime(dateFormat)
     month = filter(finances, start=first, end=last, category=catName)
     monthTo = month[month['from'] == '-']
     monthFrom = month[month['to'] == '-']
@@ -298,7 +298,7 @@ def valueToString(value):
         valStr = valStr[:cIndex] + ',' + valStr[cIndex:]
     return valStr
 
-def addEntry(finances, title, loc, date, src, to, amount, note=''):
+def insertEntry(finances, title, loc, date, src, to, amount, note=''):
     # create the row
     finances.log.loc[finances.log.shape[0]] = [title, loc, date, src, to, amount, note]
     return True
@@ -307,6 +307,17 @@ def editEntry(finances, row, title, loc, date, src, to, amount, note=''):
     # create the row
     finances.log.loc[row] = [title, loc, date, src, to, amount, note]
     return True
+
+def customDate(dateStr):
+    dateStr = dateStr.lower()
+    date = datetime.today()
+    if dateStr == 'yesterday':
+        date -= timedelta(1)
+    elif dateStr == 'tomorrow':
+        date += timedelta(1)
+    elif dateStr != 'today':
+        return False
+    return date.strftime(dateFormat)
     
 class FormatException(Exception):
     def __init__(self, message, column):
@@ -316,7 +327,9 @@ class FormatException(Exception):
 
 # checks that a cell is formatted correctly
 def correctFormat(finances, column, value, new=False):
-    value = value.strip()
+    if type == str:
+        value = value.strip()
+        
     if value == '' and not new:
         return value
     elif value == '':
@@ -328,13 +341,17 @@ def correctFormat(finances, column, value, new=False):
                 raise FormatException('"{}" must consist only of letters, numbers, spaces, hyphens, and apostrophes. "{}" found.'.format(column, c), column)
         return value
     elif column == 'date':
-        # date must be in format YYYY-MM-DD
-        value = value.replace('/', '-')
-        try:
-            dt.strptime(value, dateFormat)
-        except ValueError:
-            raise FormatException('Date must be formatted as YYYY-MM-DD.', 'date')
-        return value
+        custom = customDate(value)
+        if custom:
+            return custom
+        else:
+            # date must be in format YYYY-MM-DD
+            value = value.replace('/', '-')
+            try:
+                datetime.strptime(value, dateFormat)
+            except ValueError:
+                raise FormatException('Date must be formatted as YYYY-MM-DD.', 'date')
+            return value
     elif column == 'from' or column == 'to' or column == 'account':
         # to and from must be a valid account and upper case
         value = value.upper()

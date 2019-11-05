@@ -1,5 +1,4 @@
-import sys, os
-import pandas as pd
+import sys
 
 from control import *
 from commands import *
@@ -8,32 +7,34 @@ from commands import *
 # Main Execution
 #
 
-args = sys.argv[1:]
-argDict = {}
-
 # process all arguments first
-required = True
-if len(args) > 0 and args[-1][0:2] == '--':
-    print('Invalid argument', args[-1], 'requires a value.')
-    exit()
-for i, arg in enumerate(args):
-    if arg[0] == '-' and not arg[1].isdigit():
-        required = False
-        if arg[1] == '-':
-            nextArg = args[i+1]
-            if nextArg[0] != '-':
-                argDict[arg[2:]] = nextArg
+def processCmd(args):
+    argDict = {}
+    required = True
+    if len(args) > 0 and args[-1][0:2] == '--':
+        print('Invalid argument', args[-1], 'requires a value.')
+        exit()
+    for i, arg in enumerate(args):
+        if arg[0] == '-' and not arg[1].isdigit():
+            required = False
+            if arg[1] == '-':
+                nextArg = args[i+1]
+                if nextArg[0] != '-':
+                    argDict[arg[2:]] = nextArg
+                else:
+                    print('Invalid argument', arg, 'requires a value.')
+                    exit()
             else:
-                print('Invalid argument', arg, 'requires a value.')
-                exit()
-        else:
-            argDict[arg[1:]] = 'True'
-    elif required:
-        if i == 0:
-            argDict['cmd'] = arg
-        else:
-            argDict[i] = arg
+                argDict[arg[1:]] = 'True'
+        elif required:
+            if i == 0:
+                argDict['cmd'] = arg
+            else:
+                argDict[i] = arg
+    
+    return argDict
 
+argDict = processCmd(sys.argv[1:])
 #print('Arguments:', str(argDict))
 
 finances = load(argDict)
