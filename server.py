@@ -1,7 +1,4 @@
 import http.server, re, urllib.parse, sys, dominate
-import matplotlib.pyplot as plt
-from datetime import datetime
-from dominate.tags import *
 
 from control import *
 from features import *
@@ -393,7 +390,7 @@ def WEBdelete(finances, queries):
 def WEBaddEntry(finances, queries):
     # request to create a new log entry
     # read queries and create defaults
-    queries = addDefaults(queries, {'entry_title': '', 'entry_location': '', 'entry_date': dt.today().strftime(dateFormat), 'entry_to': '', 'entry_from': '', 'entry_amount': '', 'entry_note': ''})
+    queries = addDefaults(queries, {'entry_title': '', 'entry_location': '', 'entry_date': datetime.today().strftime(dateFormat), 'entry_to': '', 'entry_from': '', 'entry_amount': '', 'entry_note': ''})
 
     try:
         # create the row and save to file

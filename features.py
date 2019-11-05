@@ -1,9 +1,5 @@
-import os, shutil
-import pandas as pd
-import numpy as np
+import shutil
 import matplotlib.pyplot as plt
-from datetime import datetime as dt
-from datetime import timedelta
 from tabulate import tabulate
 
 from control import *
@@ -42,7 +38,7 @@ def addEntry(finances, title, loc, date, src, to, amount, note):
         to = '-'
 
     if date == '':
-        date = dt.today().strftime(dateFormat)
+        date = datetime.today().strftime(dateFormat)
 
     title   = correctFormat(finances, 'title', title, new=True)
     loc     = correctFormat(finances, 'location', loc, new=True)
@@ -67,7 +63,7 @@ def editWhole(finances, row, title, loc, date, src, to, amount, note):
         to = '-'
 
     if date == '':
-        date = dt.today().strftime(dateFormat)
+        date = datetime.today().strftime(dateFormat)
 
     title   = correctFormat(finances, 'title', title, new=True)
     loc     = correctFormat(finances, 'location', loc, new=True)
@@ -131,7 +127,7 @@ def showHistory(finances, count, acct, start, end, title, loc, note, category, t
 # display the progress of a category goal in the current month
 def goalProgress(finances, catName, month, year):
     catName = correctFormat(finances, 'category', catName)
-    today = dt.today()
+    today = datetime.today()
     if month != '':
         today = today.replace(month=int(month))
     if year != '':
@@ -151,7 +147,7 @@ def monthlyGoal(finances, catName, months):
     catName = correctFormat(finances, 'category', catName)
     months = int(months)
 
-    today = dt.today()
+    today = datetime.today()
     m = today.month
     y = today.year
     dates = []

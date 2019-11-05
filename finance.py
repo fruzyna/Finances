@@ -1,5 +1,4 @@
-import sys, os
-import pandas as pd
+import sys
 
 from control import *
 from commands import *

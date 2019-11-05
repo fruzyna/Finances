@@ -1,9 +1,5 @@
-import os, shutil
-import pandas as pd
-import numpy as np
+import shutil
 import matplotlib.pyplot as plt
-from datetime import datetime as dt
-from datetime import timedelta
 from tabulate import tabulate
 
 from control import *
@@ -52,7 +48,7 @@ def CLIaddEntry(finances, args):
             cost = args[3]
             
             # get optional arguments
-            date = getOpArg(args, 'date', default=dt.today().strftime(dateFormat))
+            date = getOpArg(args, 'date', default=datetime.today().strftime(dateFormat))
             note = getOpArg(args, 'note')
         else:
             print('First argument must be formated "[title]@[location]"')
