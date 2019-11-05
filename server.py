@@ -1,53 +1,14 @@
 import http.server, re, urllib.parse, sys, dominate
 import matplotlib.pyplot as plt
-
+from datetime import datetime
 from dominate.tags import *
+
 from control import *
 from features import *
+from server.utils import *
 
 HOST = ''
 PORT = 8080
-
-def addDefaults(queries, defaults):
-    for key in defaults:
-        if not key in queries:
-            queries[key] = defaults[key]
-    return queries
-
-def newQuery(queries):
-    query_str = ''
-    for item in queries.items():
-        key, value = item
-        query_str += '&' + key + '=' + str(value)
-    return query_str
-
-def createQTextbox(name, queries, size=20, readonly=False):
-    return td( input_(type='text', name=name, value=queries[name], size=size, readonly=readonly, style=('background-color: #fcc' if queries['invalid'] == name else '')) )
-
-def createTextbox(name, value, size=20, readonly=False):
-    return td( input_(type='text', name=name, value=value, size=size, readonly=readonly) )
-
-def createQNumbox(name, queries, min='0', step='1', size=20, readonly=False):
-    return td( input_(type='number', name=name, value=queries[name], min=min, step=step, size=size, readonly=readonly, style=('background-color: #fcc' if queries['invalid'] == name else '')) )
-
-def createNumbox(name, value, min='0', step='1', size=20, readonly=False):
-    return td( input_(type='number', name=name, value=str(value), min=min, step=step, size=size, readonly=readonly) )
-
-def createQDropdown(name, form, options, queries):
-    return createDropdown(name, form, options, queries[name])
-
-def createDropdown(name, form, options, selected=''):
-    dropdown = select(name=name, form=form)
-    for value in options:
-        op = option(value, selected=(value == selected)) 
-        dropdown.add(op)
-    return td(dropdown)
-
-def createCheckbox(name, checked, text):
-    return td( input_(type='checkbox', name=name, checked=checked), text)
-
-def createSubmit(name):
-    return td( input_(type='submit', value=name) )
 
 def WEBbalance(finances, queries, path):
     # balances tab 
@@ -156,7 +117,7 @@ def WEBgoalProgress(finances, queries, path):
 def WEBadd(finances, queries):
     # add tab
     # load in base add section
-    queries = addDefaults(queries, {'invalid': '', 'entry_title': '', 'entry_location': '', 'entry_date': dt.today().strftime(dateFormat), \
+    queries = addDefaults(queries, {'invalid': '', 'entry_title': '', 'entry_location': '', 'entry_date': datetime.today().strftime(dateFormat), \
         'entry_to': '', 'entry_from': '', 'entry_amount': '', 'entry_note': '', 'account_name': '', \
         'category_category': '', 'category_amount': '', 'category_title': '', 'category_location': '', 'category_account': ''})
 
@@ -381,7 +342,7 @@ def WEBplot(finances, queries):
     return body
 
 def WEBeditEntry(finances, queries):
-    queries = addDefaults(queries, {'edit_title': '', 'edit_location': '', 'edit_date': dt.today().strftime(dateFormat), 'edit_to': '', \
+    queries = addDefaults(queries, {'edit_title': '', 'edit_location': '', 'edit_date': datetime.today().strftime(dateFormat), 'edit_to': '', \
         'edit_from': '', 'edit_amount': '', 'edit_note': '', 'edit_row': ''})
 
     try:
